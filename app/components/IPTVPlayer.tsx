@@ -1296,24 +1296,31 @@ export default function IPTVPlayer() {
 
           {/* 4. Footer with Developer Info */}
           <div className="w-full pt-4 md:pt-6 pb-2">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
-              <div className="flex items-center gap-2">
-                <p className="text-gray-500 text-[10px] sm:text-xs font-medium">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-5 py-4 rounded-2xl bg-white/[0.04] backdrop-blur-xl border border-white/[0.08] shadow-xl shadow-black/40">
+              {/* Disclaimer Card */}
+              <div className="px-4 py-2 rounded-xl bg-white/[0.015] border border-white/[0.04] w-full md:w-auto">
+                <p className="text-gray-500 text-[10px] sm:text-xs font-medium text-center md:text-left">
                   Watch premium live TV channels directly from official stream
                   sources.
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] sm:text-xs text-gray-600 font-medium whitespace-nowrap">
-                  Developed by{" "}
-                  <span className="text-gray-400 font-bold">S. SHAJON</span>
-                </span>
-                <span className="text-gray-700">|</span>
+              
+              {/* Dedicated Cards for Developer and Repo */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto justify-center">
+                {/* Developer Credit Card */}
+                <div className="w-full sm:w-auto px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
+                  <span className="text-[10px] sm:text-xs text-gray-400 font-medium whitespace-nowrap">
+                    Developed by{" "}
+                    <span className="text-gray-200 font-bold">S. SHAJON</span>
+                  </span>
+                </div>
+                
+                {/* Repository Link Card */}
                 <a
                   href="https://github.com/SHAJON-404/iptv"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] sm:text-xs text-gray-500 hover:text-white font-semibold transition-colors whitespace-nowrap"
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/40 text-primary hover:text-white text-center transition-all duration-300 font-semibold shadow-md shadow-primary/5 text-[10px] sm:text-xs whitespace-nowrap block"
                 >
                   GitHub Repository
                 </a>
