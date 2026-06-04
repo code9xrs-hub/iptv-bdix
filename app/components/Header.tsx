@@ -49,6 +49,7 @@ export default function Header() {
                 src="/logo.png"
                 alt="IPTV Player Logo"
                 fill
+                sizes="(max-width: 640px) 48px, 60px"
                 className="object-cover"
                 priority
               />

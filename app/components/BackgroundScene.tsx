@@ -196,12 +196,12 @@ export default function BackgroundScene() {
     createCyberSphere(4, 0x06b6d4, 16, 6, -10, -0.003); // Cyan sphere right
 
     // ── 4. Animation clock and loops ──
-    const clock = new THREE.Clock();
+    const startTime = performance.now();
     let animId: number;
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
-      const time = clock.getElapsedTime();
+      const time = (performance.now() - startTime) * 0.001;
 
       // Camera inertia parallax
       targetX += (mouseX - targetX) * 0.05;
