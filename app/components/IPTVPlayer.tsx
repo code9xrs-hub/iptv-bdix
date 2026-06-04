@@ -16,6 +16,13 @@ import {
   PictureInPicture,
   ChevronsLeft,
   ChevronsRight,
+  Upload,
+  Link,
+  Trash2,
+  Check,
+  FileText,
+  AlertCircle,
+  FolderOpen
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Hls from "hls.js";
@@ -46,6 +53,14 @@ interface Channel {
   url: string;
 }
 
+interface Playlist {
+  id: string;
+  name: string;
+  type: "default" | "upload" | "url";
+  url?: string;
+  channels: Channel[];
+}
+
 export default function IPTVPlayer() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +69,20 @@ export default function IPTVPlayer() {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+
+  // Playlist Management States
+  const [playlists, setPlaylists] = useState<Playlist[]>([
+    { id: "default", name: "Default TV", type: "default", channels: [] },
+  ]);
+  const [activePlaylistId, setActivePlaylistId] = useState<string>("default");
+  
+  // Custom playlist loading states
+  const [playlistTab, setPlaylistTab] = useState<"browse" | "manage">("browse");
+  const [importUrl, setImportUrl] = useState("");
+  const [playlistName, setPlaylistName] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [playerStatus, setPlayerStatus] = useState<
     "idle" | "loading" | "playing" | "error"
@@ -406,7 +435,49 @@ export default function IPTVPlayer() {
     resetControlsTimeout();
   };
 
-  // 1. Fetch channel metadata from our API route
+  // Hydrate playlists from localStorage on client-side mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("iptv_saved_playlists");
+      const savedActiveId = localStorage.getItem("iptv_active_playlist_id");
+      
+      if (saved) {
+        const parsedSaved = JSON.parse(saved) as Playlist[];
+        const customPlaylists = parsedSaved.filter(p => p.id !== "default");
+        
+        setPlaylists(prev => [
+          prev[0], // Keep default
+          ...customPlaylists
+        ]);
+      }
+      
+      if (savedActiveId) {
+        setActivePlaylistId(savedActiveId);
+      }
+    } catch (e) {
+      console.error("Failed to load playlists from localStorage:", e);
+    }
+  }, []);
+
+  // Save custom playlists to localStorage whenever they change
+  useEffect(() => {
+    if (playlists.length <= 1 && playlists[0].channels.length === 0) return;
+    try {
+      const customPlaylists = playlists.filter(p => p.id !== "default");
+      localStorage.setItem("iptv_saved_playlists", JSON.stringify(customPlaylists));
+    } catch (e) {
+      console.error("Failed to save playlists to localStorage:", e);
+    }
+  }, [playlists]);
+
+  // Sync activePlaylistId to localStorage
+  useEffect(() => {
+    if (activePlaylistId) {
+      localStorage.setItem("iptv_active_playlist_id", activePlaylistId);
+    }
+  }, [activePlaylistId]);
+
+  // 1. Fetch channel metadata from our API route once on mount
   useEffect(() => {
     async function loadChannels() {
       try {
@@ -416,15 +487,15 @@ export default function IPTVPlayer() {
           throw new Error(`Failed to load channels (Status ${response.status})`);
         }
         const data = await response.json();
-        setChannels(data);
-        if (data.length > 0) {
-          const defaultChan = data.find(
-            (c: Channel) =>
-              c.name.toLowerCase().includes("t sports") ||
-              c.name.toLowerCase().includes("t-sports")
-          );
-          setSelectedChannel(defaultChan || data[0]);
-        }
+        
+        setPlaylists(prev => {
+          return prev.map(p => {
+            if (p.id === "default") {
+              return { ...p, channels: data };
+            }
+            return p;
+          });
+        });
       } catch (err: unknown) {
         const message =
           err instanceof Error
@@ -438,6 +509,211 @@ export default function IPTVPlayer() {
     }
     loadChannels();
   }, []);
+
+  // Sync active playlist channels to standard list representation
+  useEffect(() => {
+    const currentPlaylist = playlists.find(p => p.id === activePlaylistId);
+    if (currentPlaylist) {
+      setChannels(currentPlaylist.channels);
+      if (currentPlaylist.channels.length > 0) {
+        const alreadySelected = currentPlaylist.channels.find(
+          c => c.id === selectedChannel?.id || c.url === selectedChannel?.url
+        );
+        if (!alreadySelected) {
+          const defaultChan = currentPlaylist.channels.find(
+            (c: Channel) =>
+              c.name.toLowerCase().includes("t sports") ||
+              c.name.toLowerCase().includes("t-sports")
+          );
+          setSelectedChannel(defaultChan || currentPlaylist.channels[0]);
+        }
+      } else {
+        setSelectedChannel(null);
+      }
+    }
+  }, [activePlaylistId, playlists]);
+
+  // M3U & JSON Parsing Helpers
+  const parseM3U = (text: string): Channel[] => {
+    const lines = text.split(/\r?\n/);
+    const parsedChannels: Channel[] = [];
+    let currentChannel: Partial<Channel> = {};
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      if (line.startsWith("#EXTINF:")) {
+        currentChannel = {};
+        
+        const logoMatch = line.match(/(?:tvg-logo|logo)="([^"]+)"/i);
+        if (logoMatch) currentChannel.logo = logoMatch[1];
+
+        const groupMatch = line.match(/(?:group-title|tvg-group|group)="([^"]+)"/i);
+        if (groupMatch) currentChannel.group = groupMatch[1];
+
+        const commaIndex = line.lastIndexOf(",");
+        if (commaIndex !== -1) {
+          currentChannel.name = line.substring(commaIndex + 1).trim();
+        }
+      } else if (
+        line.startsWith("http://") || 
+        line.startsWith("https://") || 
+        (line && !line.startsWith("#"))
+      ) {
+        if (currentChannel.name || line.includes("index.m3u8") || line.includes(".m3u8") || line.includes(".mp4")) {
+          currentChannel.url = line;
+          if (!currentChannel.name) {
+            const parts = line.split("/");
+            currentChannel.name = parts[parts.length - 1] || "Channel " + (parsedChannels.length + 1);
+          }
+          currentChannel.id = `custom-ch-${parsedChannels.length}-${Date.now()}`;
+          if (!currentChannel.group) currentChannel.group = "Custom";
+          if (!currentChannel.logo) currentChannel.logo = "";
+          
+          parsedChannels.push(currentChannel as Channel);
+        }
+        currentChannel = {};
+      }
+    }
+
+    return parsedChannels;
+  };
+
+  const parseJSON = (text: string): Channel[] => {
+    const data = JSON.parse(text);
+    const list = Array.isArray(data) ? data : data.channels || data.items || [];
+    if (!Array.isArray(list)) {
+      throw new Error("Invalid playlist JSON format. Expected an array of channels.");
+    }
+    return list.map((ch: any, idx: number) => {
+      const url = ch.url || ch.streamUrl || ch.link;
+      if (!url) throw new Error(`Channel at index ${idx} is missing a streaming URL ('url')`);
+      return {
+        id: ch.id || `custom-json-${idx}-${Date.now()}`,
+        name: ch.name || ch.title || `Channel ${idx + 1}`,
+        logo: ch.logo || ch.logoUrl || ch.image || "",
+        group: ch.group || ch.category || "Custom",
+        url: url,
+      };
+    });
+  };
+
+  // Custom playlist handlers
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportError(null);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        let parsed: Channel[] = [];
+        
+        if (file.name.endsWith(".json")) {
+          parsed = parseJSON(text);
+        } else {
+          parsed = parseM3U(text);
+        }
+
+        if (parsed.length === 0) {
+          throw new Error("No channels could be parsed from this file.");
+        }
+
+        const name = file.name.replace(/\.[^/.]+$/, "");
+        const newPlaylist: Playlist = {
+          id: `playlist-${Date.now()}`,
+          name: name,
+          type: "upload",
+          channels: parsed,
+        };
+
+        setPlaylists(prev => [...prev, newPlaylist]);
+        setActivePlaylistId(newPlaylist.id);
+        setPlaylistTab("browse");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      } catch (err: any) {
+        setImportError(err.message || "Failed to parse file. Ensure it is a valid M3U or JSON playlist.");
+      }
+    };
+    reader.onerror = () => {
+      setImportError("Error reading file.");
+    };
+    reader.readAsText(file);
+  };
+
+  const handleUrlImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importUrl) return;
+
+    setIsImporting(true);
+    setImportError(null);
+
+    try {
+      const proxiedUrl = `/api/iptv/proxy?url=${encodeURIComponent(importUrl.trim())}`;
+      const res = await fetch(proxiedUrl);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch from URL (Status ${res.status})`);
+      }
+
+      const text = await res.text();
+      let parsed: Channel[] = [];
+
+      const trimmedText = text.trim();
+      if (trimmedText.startsWith("[") || trimmedText.startsWith("{")) {
+        parsed = parseJSON(text);
+      } else {
+        parsed = parseM3U(text);
+      }
+
+      if (parsed.length === 0) {
+        throw new Error("No channels could be parsed from this URL.");
+      }
+
+      let name = playlistName.trim();
+      if (!name) {
+        try {
+          const urlObj = new URL(importUrl);
+          name = urlObj.hostname + urlObj.pathname.substring(urlObj.pathname.lastIndexOf("/"));
+          name = name.replace(/\.[^/.]+$/, "");
+        } catch {
+          name = "Imported URL Playlist";
+        }
+      }
+
+      const newPlaylist: Playlist = {
+        id: `playlist-${Date.now()}`,
+        name: name,
+        type: "url",
+        url: importUrl,
+        channels: parsed,
+      };
+
+      setPlaylists(prev => [...prev, newPlaylist]);
+      setActivePlaylistId(newPlaylist.id);
+      setImportUrl("");
+      setPlaylistName("");
+      setPlaylistTab("browse");
+    } catch (err: any) {
+      setImportError(err.message || "Failed to import from URL. Please check the link or CORS policy.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleDeletePlaylist = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (id === "default") return;
+
+    setPlaylists(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      if (activePlaylistId === id) {
+        setActivePlaylistId("default");
+      }
+      return updated;
+    });
+  };
 
   // 2. Initialize Hls.js/Native player and load stream
   const initializeStream = useCallback(
@@ -703,33 +979,33 @@ export default function IPTVPlayer() {
         <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full items-center animate-pulse">
           {/* 1. Player Card Skeleton */}
           <div className="w-full aspect-video rounded-2xl md:rounded-3xl bg-white/[0.01] border border-white/5 flex items-center justify-center min-h-[200px]">
-            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
-              <Radio size={32} className="text-white/10" />
+            <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
+              <Radio size={32} className="text-white/20 animate-pulse" />
             </div>
           </div>
 
           {/* 2. Middle Cards Skeletons */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
             {/* Card 1: Channel Details Skeleton */}
-            <div className="glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center gap-4 bg-white/[0.01] w-full">
-              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 flex-shrink-0" />
+            <div className="glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center gap-4 bg-white/[0.01] w-full animate-pulse">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 flex-shrink-0" />
               <div className="space-y-2 flex-1">
-                <div className="h-4 sm:h-5 bg-white/5 rounded w-2/3" />
-                <div className="h-3.5 bg-white/5 rounded w-1/3" />
+                <div className="h-4 sm:h-5 bg-white/10 rounded w-2/3 animate-pulse" />
+                <div className="h-3.5 bg-white/10 rounded w-1/3 animate-pulse" />
               </div>
             </div>
 
             {/* Card 2: Developer Info Skeleton */}
-            <div className="glass-card p-4 sm:p-5 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-4 bg-white/[0.01] w-full">
+            <div className="glass-card p-4 sm:p-5 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-4 bg-white/[0.01] w-full animate-pulse">
               {/* Left block skeleton */}
               <div className="flex items-center gap-3 flex-shrink-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/5 border border-white/10 flex-shrink-0" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 border border-white/10 flex-shrink-0" />
                 <div className="space-y-2">
-                  <div className="h-4 bg-white/5 rounded w-16" />
+                  <div className="h-4 bg-white/10 rounded w-16 animate-pulse" />
                   <div className="flex gap-2.5">
-                    <div className="w-4 h-4 bg-white/5 rounded" />
-                    <div className="w-4 h-4 bg-white/5 rounded" />
-                    <div className="w-4 h-4 bg-white/5 rounded" />
+                    <div className="w-4 h-4 bg-white/10 rounded animate-pulse" />
+                    <div className="w-4 h-4 bg-white/10 rounded animate-pulse" />
+                    <div className="w-4 h-4 bg-white/10 rounded animate-pulse" />
                   </div>
                 </div>
               </div>
@@ -737,17 +1013,17 @@ export default function IPTVPlayer() {
               <div className="hidden xs:block h-10 w-[1px] bg-white/10 flex-shrink-0" />
               {/* Right block skeleton */}
               <div className="space-y-1.5 flex-1 pl-1">
-                <div className="h-2.5 bg-white/5 rounded w-11/12" />
-                <div className="h-2.5 bg-white/5 rounded w-4/5" />
+                <div className="h-2.5 bg-white/10 rounded w-11/12 animate-pulse" />
+                <div className="h-2.5 bg-white/10 rounded w-4/5 animate-pulse" />
               </div>
             </div>
 
             {/* Card 3: Total Channels Count Skeleton */}
-            <div className="glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center gap-4 bg-white/[0.01] w-full">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/10 flex-shrink-0" />
+            <div className="glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center gap-4 bg-white/[0.01] w-full animate-pulse">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/10 border border-white/10 flex-shrink-0" />
               <div className="space-y-2 flex-1">
-                <div className="h-4 bg-white/5 rounded w-1/3" />
-                <div className="h-5 bg-white/5 rounded w-1/2" />
+                <div className="h-4 bg-white/10 rounded w-1/3 animate-pulse" />
+                <div className="h-5 bg-white/10 rounded w-1/2 animate-pulse" />
               </div>
             </div>
           </div>
@@ -1056,242 +1332,432 @@ export default function IPTVPlayer() {
 
           {/* 2. Grid for Channel Details & Channel Count Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+            {/* Channel Details Card / Skeleton */}
             {selectedChannel ? (
-              <>
-                {/* Channel Details Card */}
-                <motion.div
-                  key={selectedChannel.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="md:col-span-1 glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-start gap-4 text-left bg-white/[0.01] w-full"
-                >
-                  {selectedChannel.logo ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={selectedChannel.logo}
-                      alt={selectedChannel.name}
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                      className="w-10 h-10 sm:w-14 sm:h-14 object-contain rounded-xl sm:rounded-2xl bg-white/5 p-0.5 sm:p-1 border border-white/10 flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-primary/30 to-violet-500/30 flex items-center justify-center font-bold text-sm sm:text-base text-primary border border-primary/20 flex-shrink-0">
-                      {getInitials(selectedChannel.name)}
-                    </div>
-                  )}
-                  <div className="space-y-1 min-w-0">
-                    <h2 className="text-base sm:text-lg md:text-xl font-bold truncate">
-                      {selectedChannel.name}
-                    </h2>
-                    <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-primary bg-primary/10 px-1.5 sm:px-2 py-0.5 rounded border border-primary/20 block w-fit">
-                      {selectedChannel.group}
-                    </span>
+              <motion.div
+                key={selectedChannel.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`md:col-span-1 glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-start gap-4 text-left bg-white/[0.01] w-full ${
+                  playerStatus === "loading" ? "animate-pulse" : ""
+                }`}
+              >
+                {selectedChannel.logo ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={selectedChannel.logo}
+                    alt={selectedChannel.name}
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                    }}
+                    className="w-10 h-10 sm:w-14 sm:h-14 object-contain rounded-xl sm:rounded-2xl bg-white/5 p-0.5 sm:p-1 border border-white/10 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-primary/30 to-violet-500/30 flex items-center justify-center font-bold text-sm sm:text-base text-primary border border-primary/20 flex-shrink-0">
+                    {getInitials(selectedChannel.name)}
                   </div>
-                </motion.div>
-
-                {/* Developer Info Card */}
-                <div className="glass-card p-4 sm:p-5 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-4 text-left bg-white/[0.01] w-full md:col-span-1">
-                  {/* Left block: Avatar & Name/Socials */}
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="relative">
-                      <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-white/15 shadow-md">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src="https://avatars.githubusercontent.com/u/171383675?v=4"
-                          alt="S. SHAJON"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#070414] z-10 animate-pulse" />
-                    </div>
-                    <div className="flex flex-col">
-                      <h3 className="text-base sm:text-lg font-black text-white leading-tight">
-                        S. SHAJON
-                      </h3>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <a
-                          href="https://github.com/SHAJON-404"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-white transition-colors"
-                          title="GitHub"
-                        >
-                          <GithubIcon size={18} />
-                        </a>
-                        <a
-                          href="https://t.me/SHAJON"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-[#26A5E4] transition-colors"
-                          title="Telegram"
-                        >
-                          <TelegramIcon size={16} />
-                        </a>
-                        <a
-                          href="https://www.facebook.com/shahmakhdumshajonofficial"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-400 hover:text-[#1877F2] transition-colors"
-                          title="Facebook"
-                        >
-                          <FacebookIcon size={18} />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Vertical Separator */}
-                  <div className="hidden xs:block h-10 w-[1px] bg-white/10 flex-shrink-0" />
-
-                  {/* Right block: Support details */}
-                  <p className="text-[10px] sm:text-[10.5px] leading-normal text-gray-500 font-medium select-text flex-1 pl-1 min-w-[120px]">
-                    For any support, contact via <a href="https://t.me/SHAJON" target="_blank" rel="noopener noreferrer" className="text-[#26A5E4] font-bold hover:underline">Telegram only</a>. Follow GitHub for updates!
-                  </p>
+                )}
+                <div className="space-y-1 min-w-0">
+                  <h2 className="text-base sm:text-lg md:text-xl font-bold truncate">
+                    {selectedChannel.name}
+                  </h2>
+                  <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-primary bg-primary/10 px-1.5 sm:px-2 py-0.5 rounded border border-primary/20 block w-fit">
+                    {selectedChannel.group}
+                  </span>
                 </div>
-
-                {/* Channel Count Card */}
-                <div className="glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-start gap-4 text-left bg-white/[0.01] w-full md:col-span-1">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
-                    <Tv size={20} className="animate-pulse" />
-                  </div>
-                  <div className="space-y-0.5 min-w-0">
-                    <p className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-gray-500 truncate">
-                      Total Channels
-                    </p>
-                    <h3 className="text-base sm:text-lg font-bold text-emerald-400 truncate">
-                      {channels.length} Channels
-                    </h3>
-                  </div>
-                </div>
-              </>
+              </motion.div>
             ) : (
-              /* Channel Count Card (Full width if no channel selected) */
-              <div className="glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-start gap-4 text-left bg-white/[0.01] w-full md:col-span-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
-                  <Tv size={20} className="animate-pulse" />
+              <div className="md:col-span-1 glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-start gap-4 text-left bg-white/[0.01] w-full animate-pulse">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white/10 border border-white/10 flex-shrink-0 flex items-center justify-center">
+                  <Radio size={20} className="text-white/20" />
                 </div>
-                <div className="space-y-0.5 min-w-0">
-                  <p className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-gray-500 truncate">
-                    Total Channels
-                  </p>
-                  <h3 className="text-base sm:text-lg font-bold text-emerald-400 truncate">
-                    {channels.length} Channels
-                  </h3>
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="h-4 bg-white/10 rounded w-2/3" />
+                  <div className="h-3 bg-white/10 rounded w-1/3" />
                 </div>
               </div>
             )}
+
+            {/* Developer Info Card */}
+            <div className="glass-card p-4 sm:p-5 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-4 text-left bg-white/[0.01] w-full md:col-span-1">
+              {/* Left block: Avatar & Name/Socials */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="relative">
+                  <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-white/15 shadow-md">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="https://avatars.githubusercontent.com/u/171383675?v=4"
+                      alt="S. SHAJON"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#070414] z-10 animate-pulse" />
+                </div>
+                <div className="flex flex-col">
+                  <h3 className="text-base sm:text-lg font-black text-white leading-tight">
+                    S. SHAJON
+                  </h3>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <a
+                      href="https://github.com/SHAJON-404"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-white transition-colors"
+                      title="GitHub"
+                    >
+                      <GithubIcon size={18} />
+                    </a>
+                    <a
+                      href="https://t.me/SHAJON"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-[#26A5E4] transition-colors"
+                      title="Telegram"
+                    >
+                      <TelegramIcon size={16} />
+                    </a>
+                    <a
+                      href="https://www.facebook.com/shahmakhdumshajonofficial"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-[#1877F2] transition-colors"
+                      title="Facebook"
+                    >
+                      <FacebookIcon size={18} />
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vertical Separator */}
+              <div className="hidden xs:block h-10 w-[1px] bg-white/10 flex-shrink-0" />
+
+              {/* Right block: Support details */}
+              <p className="text-[10px] sm:text-[10.5px] leading-normal text-gray-500 font-medium select-text flex-1 pl-1 min-w-[120px]">
+                For any support, contact via <a href="https://t.me/SHAJON" target="_blank" rel="noopener noreferrer" className="text-[#26A5E4] font-bold hover:underline">Telegram only</a>. Follow GitHub for updates!
+              </p>
+            </div>
+
+            {/* Channel Count Card */}
+            <div className="glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-start gap-4 text-left bg-white/[0.01] w-full md:col-span-1">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+                <Tv size={20} className="animate-pulse" />
+              </div>
+              <div className="space-y-0.5 min-w-0">
+                <p className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-gray-500 truncate">
+                  Total Channels
+                </p>
+                <h3 className="text-base sm:text-lg font-bold text-emerald-400 truncate">
+                  {channels.length} Channels
+                </h3>
+              </div>
+            </div>
           </div>
 
           {/* 3. Channel List Card */}
-          <div className="w-full glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl bg-white/[0.01] flex flex-col h-[550px] sm:h-[650px]">
-            {/* Search and Filters */}
-            <div className="space-y-3 sm:space-y-4 pb-3 sm:pb-4 border-b border-white/5">
-              <div className="relative flex items-center bg-white/5 border border-white/5 focus-within:border-primary/50 rounded-xl sm:rounded-2xl p-1 transition-colors">
-                <Search className="text-gray-500 ml-2.5 sm:ml-3" size={15} />
-                <input
-                  type="text"
-                  placeholder="Search live TV..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none py-1.5 sm:py-2 px-2.5 sm:px-3 text-sm text-white placeholder:text-gray-500"
-                />
+          <div className="w-full glass-card p-4 sm:p-6 border border-white/5 rounded-2xl md:rounded-3xl bg-white/[0.01] flex flex-col h-[600px] sm:h-[700px]">
+            {/* Playlist Header & Tab Bar */}
+            <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-white/5 flex-wrap gap-2">
+              <div className="flex items-center bg-white/5 p-1 rounded-xl border border-white/5">
+                <button
+                  onClick={() => setPlaylistTab("browse")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                    playlistTab === "browse"
+                      ? "bg-primary text-white shadow-lg shadow-primary/20"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <Tv size={14} />
+                  <span>Browse Channels</span>
+                </button>
+                <button
+                  onClick={() => setPlaylistTab("manage")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                    playlistTab === "manage"
+                      ? "bg-primary text-white shadow-lg shadow-primary/20"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <Upload size={14} />
+                  <span>Playlists Manager</span>
+                </button>
               </div>
 
-              {/* Categories horizontally scrollable */}
-              <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 no-scrollbar">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap border transition-all ${
-                      selectedCategory === cat
-                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/20"
-                        : "bg-white/5 border-white/5 text-gray-400 hover:text-white hover:bg-white/10"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+              {/* Display active playlist name */}
+              <div className="text-[10px] sm:text-xs text-gray-400 bg-white/5 border border-white/5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl max-w-[180px] sm:max-w-[260px] truncate select-none flex items-center gap-1.5 sm:gap-2">
+                <span className="font-semibold shrink-0">Playlist:</span>
+                <span className="text-white font-bold truncate">
+                  {playlists.find((p) => p.id === activePlaylistId)?.name}
+                </span>
               </div>
             </div>
 
-            {/* List styled as a responsive grid */}
-            <div className="flex-1 min-h-0 overflow-y-auto pt-3 sm:pt-4 pr-1 custom-scrollbar">
-              {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {Array.from({ length: 12 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.02] border border-white/5 animate-pulse"
-                    >
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/10" />
-                      <div className="flex-1 space-y-1.5 sm:space-y-2">
-                        <div className="h-2.5 sm:h-3 w-1/3 bg-white/10 rounded" />
-                        <div className="h-3.5 sm:h-4 w-2/3 bg-white/10 rounded" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : filteredChannels.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 text-sm font-medium">
-                  No channels found match your filters.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {filteredChannels.map((chan) => {
-                    const isSelected = selectedChannel?.id === chan.id;
-                    return (
+            {playlistTab === "browse" ? (
+              <>
+                {/* Search and Filters */}
+                <div className="space-y-3 sm:space-y-4 py-3 sm:py-4 border-b border-white/5">
+                  <div className="relative flex items-center bg-white/5 border border-white/5 focus-within:border-primary/50 rounded-xl sm:rounded-2xl p-1 transition-colors">
+                    <Search className="text-gray-500 ml-2.5 sm:ml-3" size={15} />
+                    <input
+                      type="text"
+                      placeholder="Search live TV..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="flex-1 bg-transparent border-none outline-none py-1.5 sm:py-2 px-2.5 sm:px-3 text-sm text-white placeholder:text-gray-500"
+                    />
+                  </div>
+
+                  {/* Categories horizontally scrollable */}
+                  <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    {categories.map((cat) => (
                       <button
-                        key={chan.id}
-                        onClick={() => handleChannelSelect(chan)}
-                        className={`w-full flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border text-left transition-all group ${
-                          isSelected
-                            ? "bg-primary/10 border-primary text-primary"
-                            : "bg-white/[0.02] border-white/5 text-white hover:bg-white/[0.05] hover:border-white/10"
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap border transition-all ${
+                          selectedCategory === cat
+                            ? "bg-primary border-primary text-white shadow-lg shadow-primary/20"
+                            : "bg-white/5 border-white/5 text-gray-400 hover:text-white hover:bg-white/10"
                         }`}
                       >
-                        {chan.logo ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={chan.logo}
-                            alt={chan.name}
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = "none";
-                            }}
-                            className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-lg sm:rounded-xl bg-white/5 p-0.5 border border-white/10 group-hover:scale-105 transition-transform"
-                          />
-                        ) : (
-                          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-tr from-white/5 to-white/10 flex items-center justify-center font-bold text-xs border border-white/10 text-gray-400 group-hover:text-white transition-colors">
-                            {getInitials(chan.name)}
-                          </div>
-                        )}
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${
-                              isSelected ? "text-primary/75" : "text-gray-500"
+                {/* List styled as a responsive grid */}
+                <div className="flex-1 min-h-0 overflow-y-auto pt-3 sm:pt-4 pr-1 custom-scrollbar">
+                  {loading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {Array.from({ length: 12 }).map((_, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.02] border border-white/5 animate-pulse"
+                        >
+                          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-white/10" />
+                          <div className="flex-1 space-y-1.5 sm:space-y-2">
+                            <div className="h-2.5 sm:h-3 w-1/3 bg-white/10 rounded" />
+                            <div className="h-3.5 sm:h-4 w-2/3 bg-white/10 rounded" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : filteredChannels.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500 text-sm font-medium">
+                      No channels found match your filters.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {filteredChannels.map((chan) => {
+                        const isSelected = selectedChannel?.id === chan.id;
+                        return (
+                          <button
+                            key={chan.id}
+                            onClick={() => handleChannelSelect(chan)}
+                            className={`w-full flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border text-left transition-all group ${
+                              isSelected
+                                ? "bg-primary/10 border-primary text-primary"
+                                : "bg-white/[0.02] border-white/5 text-white hover:bg-white/[0.05] hover:border-white/10"
                             }`}
                           >
-                            {chan.group}
-                          </p>
-                          <p className="text-[13px] sm:text-sm font-bold truncate">
-                            {chan.name}
-                          </p>
-                        </div>
+                            {chan.logo ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={chan.logo}
+                                alt={chan.name}
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
+                                className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-lg sm:rounded-xl bg-white/5 p-0.5 border border-white/10 group-hover:scale-105 transition-transform"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-tr from-white/5 to-white/10 flex items-center justify-center font-bold text-xs border border-white/10 text-gray-400 group-hover:text-white transition-colors">
+                                {getInitials(chan.name)}
+                              </div>
+                            )}
 
-                        {isSelected && (
-                          <Play
-                            size={13}
-                            className="sm:w-3.5 sm:h-3.5 fill-primary text-primary animate-pulse"
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider ${
+                                  isSelected ? "text-primary/75" : "text-gray-500"
+                                }`}
+                              >
+                                {chan.group}
+                              </p>
+                              <p className="text-[13px] sm:text-sm font-bold truncate">
+                                {chan.name}
+                              </p>
+                            </div>
+
+                            {isSelected && (
+                              <Play
+                                size={13}
+                                className="sm:w-3.5 sm:h-3.5 fill-primary text-primary animate-pulse"
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <div className="flex-1 overflow-y-auto pt-4 pr-1 space-y-6 custom-scrollbar text-left">
+                {/* Import Playlist Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* URL Import Box */}
+                  <form onSubmit={handleUrlImport} className="glass-card p-4 sm:p-5 border border-white/5 rounded-2xl bg-white/[0.01] flex flex-col justify-between min-h-[180px] hover:border-primary/20 transition-colors">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                          <Link size={18} />
+                        </div>
+                        <h4 className="font-bold text-sm sm:text-base">Load from URL</h4>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Playlist Name (e.g. My IPTV)"
+                          value={playlistName}
+                          onChange={(e) => setPlaylistName(e.target.value)}
+                          className="w-full bg-white/5 border border-white/5 focus-within:border-primary/40 rounded-xl py-2.5 px-3 text-xs text-white placeholder:text-gray-500 outline-none transition-colors"
+                        />
+                        <input
+                          type="url"
+                          placeholder="https://example.com/playlist.m3u"
+                          value={importUrl}
+                          onChange={(e) => setImportUrl(e.target.value)}
+                          required
+                          className="w-full bg-white/5 border border-white/5 focus-within:border-primary/40 rounded-xl py-2.5 px-3 text-xs text-white placeholder:text-gray-500 outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isImporting}
+                      className="mt-4 w-full flex items-center justify-center gap-2 py-3 px-4 bg-primary hover:bg-primary/95 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-primary/10 disabled:opacity-50 active:scale-95 cursor-pointer"
+                    >
+                      {isImporting ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Importing Stream...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check size={14} />
+                          <span>Import Playlist</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+
+                  {/* File Upload Box */}
+                  <div className="glass-card p-4 sm:p-5 border border-white/5 rounded-2xl bg-white/[0.01] flex flex-col justify-between min-h-[180px] hover:border-primary/20 transition-colors">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                          <Upload size={18} />
+                        </div>
+                        <h4 className="font-bold text-sm sm:text-base">Upload Playlist File</h4>
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        Upload local .m3u, .m3u8, or .json playlist files. Stored securely in your browser cache.
+                      </p>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        accept=".m3u,.m3u8,.json"
+                        className="hidden"
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20 text-xs font-bold rounded-xl transition-all shadow-md active:scale-95"
+                      >
+                        <Upload size={14} />
+                        <span>Choose M3U or JSON File</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Validation Errors */}
+                {importError && (
+                  <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
+                    <AlertCircle size={15} className="mt-0.5 flex-shrink-0" />
+                    <span>{importError}</span>
+                  </div>
+                )}
+
+                {/* Saved Playlists */}
+                <div className="space-y-3">
+                  <h4 className="font-bold text-sm sm:text-base text-gray-300">Your Playlists</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {playlists.map((pl) => {
+                      const isActive = pl.id === activePlaylistId;
+                      return (
+                        <div
+                          key={pl.id}
+                          onClick={() => {
+                            setActivePlaylistId(pl.id);
+                            setPlaylistTab("browse");
+                          }}
+                          className={`flex items-center justify-between p-4 sm:p-5 rounded-2xl border text-left transition-all cursor-pointer group/item ${
+                            isActive
+                              ? "bg-primary/10 border-primary text-primary shadow-lg shadow-primary/5"
+                              : "bg-white/[0.02] border-white/5 text-white hover:bg-white/[0.05] hover:border-white/10"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`p-2.5 rounded-xl border flex-shrink-0 ${
+                              isActive ? "bg-primary/20 border-primary/20" : "bg-white/5 border-white/10"
+                            }`}>
+                              {pl.type === "default" ? (
+                                <Tv size={16} />
+                              ) : pl.type === "url" ? (
+                                <Link size={16} />
+                              ) : (
+                                <FileText size={16} />
+                              )}
+                            </div>
+                            
+                            <div className="min-w-0">
+                              <h5 className="font-bold text-xs sm:text-sm truncate pr-2">{pl.name}</h5>
+                              <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">
+                                {pl.channels.length} Channels • {pl.type === "default" ? "Built-in" : pl.type === "url" ? "URL" : "Uploaded File"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {isActive && (
+                              <span className="p-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                <Check size={12} className="stroke-[3]" />
+                              </span>
+                            )}
+                            {pl.id !== "default" && (
+                              <button
+                                onClick={(e) => handleDeletePlaylist(pl.id, e)}
+                                className="p-2 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all opacity-0 group-hover/item:opacity-100 focus:opacity-100 cursor-pointer"
+                                title="Delete Playlist"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 4. Footer with Developer Info */}
