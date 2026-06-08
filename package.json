@@ -14,10 +14,11 @@
     "lucide-react": "^1.17.0",
     "motion": "^12.40.0",
     "next": "16.2.7",
+    "postcss": "^8.5.15",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-icons": "^5.6.0",
-    "undici": "^6.23.0"
+    "undici": "^8.4.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -34,5 +35,8 @@
     "Safari >= 15",
     "Firefox >= 100",
     "Edge >= 100"
-  ]
+  ],
+  "overrides": {
+    "postcss": "^8.5.15"
+  }
 }
