@@ -21,11 +21,13 @@ const cache: Record<string, PlaylistCache> = {
   sports: { channels: [], hash: "", lastLoadedTime: 0 },
   universal: { channels: [], hash: "", lastLoadedTime: 0 },
   bangla: { channels: [], hash: "", lastLoadedTime: 0 },
+  fifa: { channels: [], hash: "", lastLoadedTime: 0 },
 };
 
 function getFilename(type: string): string {
   if (type === "sports") return "sports.json";
   if (type === "bangla") return "bangla.json";
+  if (type === "fifa") return "fifa.json";
   return "channels.json";
 }
 
@@ -34,7 +36,7 @@ export function getChannelsWithHash(rawType: string = "universal") {
   if (type === "default" || type === "channels") {
     type = "universal";
   }
-  if (type !== "sports" && type !== "bangla") {
+  if (type !== "sports" && type !== "bangla" && type !== "fifa") {
     type = "universal";
   }
 

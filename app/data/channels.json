@@ -61350,17 +61350,6 @@
     "content_type": "application/x-mpegurl"
   },
   {
-    "name": "Somoy News TV (1080p)",
-    "logo": "https://i.imgur.com/i54AQic.png",
-    "group": "News",
-    "url": "https://bozztv.com/rongo/rongo-somoy/index.m3u8",
-    "tvg_id": "SomoyNewsTV.bd@SD",
-    "status": "live",
-    "verified_at": "2026-06-04T15:23:04.441212",
-    "status_code": 200,
-    "content_type": "application/vnd.apple.mpegurl"
-  },
-  {
     "name": "Sonic The Hedgehog (720p)",
     "logo": "",
     "group": "Undefined",

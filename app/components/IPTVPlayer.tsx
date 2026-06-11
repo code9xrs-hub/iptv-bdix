@@ -70,6 +70,7 @@ export default function IPTVPlayer() {
     { id: "sports", name: "Sports", type: "default", channels: [] },
     { id: "universal", name: "Universal", type: "default", channels: [] },
     { id: "bangla", name: "Bangla", type: "default", channels: [] },
+    { id: "fifa", name: "FIFA", type: "default", channels: [] },
   ]);
   const [activePlaylistId, setActivePlaylistId] = useState<string>("sports");
 
@@ -550,7 +551,7 @@ export default function IPTVPlayer() {
       if (saved) {
         const parsedSaved = JSON.parse(saved) as Playlist[];
         const customPlaylists = parsedSaved.filter(p => 
-          p.id !== "default" && p.id !== "sports" && p.id !== "universal" && p.id !== "bangla"
+          p.id !== "default" && p.id !== "sports" && p.id !== "universal" && p.id !== "bangla" && p.id !== "fifa"
         );
 
         setTimeout(() => {
@@ -578,7 +579,7 @@ export default function IPTVPlayer() {
   // Save custom playlists to localStorage whenever they change
   useEffect(() => {
     const customPlaylists = playlists.filter(p => 
-      p.id !== "default" && p.id !== "sports" && p.id !== "universal" && p.id !== "bangla"
+      p.id !== "default" && p.id !== "sports" && p.id !== "universal" && p.id !== "bangla" && p.id !== "fifa"
     );
     try {
       localStorage.setItem("iptv_saved_playlists", JSON.stringify(customPlaylists));
@@ -1022,7 +1023,7 @@ export default function IPTVPlayer() {
 
   const handleDeletePlaylist = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (id === "default" || id === "sports" || id === "universal" || id === "bangla") return;
+    if (id === "default" || id === "sports" || id === "universal" || id === "bangla" || id === "fifa") return;
 
     setPlaylists(prev => {
       const updated = prev.filter(p => p.id !== id);
