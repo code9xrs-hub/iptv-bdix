@@ -39,16 +39,18 @@ export default function TelegramPopup({ showPopup }: TelegramPopupProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="absolute inset-0 bg-[#070414]/90 backdrop-blur-lg"
+            style={{ willChange: "opacity" }}
+            className="absolute inset-0 bg-[#070414]/85 backdrop-blur-md"
           />
 
           {/* Modal Container */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            transition={{ type: "spring", duration: 0.55, bounce: 0.15 }}
-            className="relative w-full max-w-[92%] sm:max-w-lg max-h-[90vh] overflow-y-auto no-scrollbar rounded-3xl border border-white/10 sm:border-white/5 bg-[#0c0824]/95 p-5 sm:p-8 shadow-[0_0_50px_rgba(38,165,228,0.15)] backdrop-blur-3xl"
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ ease: "easeOut", duration: 0.25 }}
+            style={{ willChange: "transform, opacity" }}
+            className="relative w-full max-w-[92%] sm:max-w-lg max-h-[90vh] overflow-y-auto no-scrollbar rounded-3xl border border-white/10 sm:border-white/5 bg-[#0c0824]/98 p-5 sm:p-8 shadow-[0_0_50px_rgba(38,165,228,0.15)]"
           >
             {/* Ambient Background Lights */}
             <div className="absolute -top-24 -left-24 -z-10 h-48 w-48 rounded-full bg-[#26A5E4]/15 blur-[64px]" />
