@@ -55,6 +55,9 @@ const getPlayableUrl = (url: string) => {
   return url;
 };
 
+// Cache expires after 15 minutes — forces a full re-fetch
+const CACHE_MAX_AGE_MS = 15 * 60 * 1000;
+
 export default function IPTVPlayer() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -609,9 +612,6 @@ export default function IPTVPlayer() {
       request.onerror = () => reject(request.error);
     });
   }, []);
-
-  // Cache expires after 15 minutes — forces a full re-fetch
-  const CACHE_MAX_AGE_MS = 15 * 60 * 1000;
 
   const getCachedChannels = useCallback(async (playlistId: string): Promise<{ channels: Channel[]; hash: string } | null> => {
     try {
