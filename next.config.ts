@@ -1,8 +1,12 @@
 import type { NextConfig } from "next";
 
+const customOrigins = process.env.ALLOWED_DEV_ORIGINS
+  ? process.env.ALLOWED_DEV_ORIGINS.split(",").map((item) => item.trim())
+  : [];
+
 const nextConfig: NextConfig = {
   output: "standalone",
-  allowedDevOrigins: ["live.shajon.dev", "192.168.0.57"],
+  allowedDevOrigins: customOrigins,
   images: {
     unoptimized: true,
     remotePatterns: [
