@@ -193,7 +193,7 @@ export default function IPTVPlayer() {
       if (video && !video.paused) {
         setShowControls(false);
       }
-    }, 3000);
+    }, 4000);
   }, []);
 
   const setupUnmuteOnInteraction = useCallback(() => {
@@ -227,14 +227,14 @@ export default function IPTVPlayer() {
     unmuteCleanupRef.current = cleanup;
   }, []);
 
-  // Auto-hide controls after 3s if video is playing
+  // Auto-hide controls after 4s if video is playing
   useEffect(() => {
     const timeout = setTimeout(() => {
       const video = videoRef.current;
       if (video && !video.paused) {
         setShowControls(false);
       }
-    }, 3000);
+    }, 4000);
     controlsTimeoutRef.current = timeout;
     return () => {
       if (controlsTimeoutRef.current) {
