@@ -138,7 +138,7 @@ export default function IPTVPlayer() {
           }
         }
       } catch (error) {
-        console.error("Failed to send heartbeat:", error);
+        console.warn("Failed to send heartbeat:", error);
       }
     };
 
