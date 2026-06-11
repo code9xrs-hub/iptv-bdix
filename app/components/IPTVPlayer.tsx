@@ -81,6 +81,8 @@ export default function IPTVPlayer() {
   const [playlistTab, setPlaylistTab] = useState<"browse" | "manage">("browse");
   const [importUrl, setImportUrl] = useState("");
   const [playlistName, setPlaylistName] = useState("");
+  const [uploadPlaylistName, setUploadPlaylistName] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -926,10 +928,7 @@ export default function IPTVPlayer() {
   };
 
   // Custom playlist handlers
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = (file: File) => {
     setImportError(null);
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -947,7 +946,7 @@ export default function IPTVPlayer() {
           throw new Error("No channels could be parsed from this file.");
         }
 
-        const name = file.name.replace(/\.[^/.]+$/, "");
+        const name = uploadPlaylistName.trim() || file.name.replace(/\.[^/.]+$/, "");
         const newPlaylist: Playlist = {
           id: `playlist-${Date.now()}`,
           name: name,
@@ -958,6 +957,7 @@ export default function IPTVPlayer() {
         setPlaylists(prev => [...prev, newPlaylist]);
         setActivePlaylistId(newPlaylist.id);
         setPlaylistTab("browse");
+        setUploadPlaylistName("");
         if (fileInputRef.current) fileInputRef.current.value = "";
       } catch (err) {
         setImportError(
@@ -971,6 +971,33 @@ export default function IPTVPlayer() {
       setImportError("Error reading file.");
     };
     reader.readAsText(file);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    processFile(file);
   };
 
   const handleUrlImport = async (e: React.FormEvent) => {
@@ -2123,7 +2150,16 @@ export default function IPTVPlayer() {
                   </form>
 
                   {/* File Upload Box */}
-                  <div className="glass-card p-4 sm:p-5 border border-white/10 sm:border-white/5 rounded-2xl bg-white/[0.01] flex flex-col justify-between min-h-[180px] hover:border-primary/20 transition-colors">
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`glass-card p-4 sm:p-5 border rounded-2xl flex flex-col justify-between min-h-[220px] transition-all relative overflow-hidden ${
+                      isDragging
+                        ? "border-dashed border-primary bg-primary/10 shadow-[0_0_20px_rgba(139,92,246,0.2)]"
+                        : "border-white/10 sm:border-white/5 bg-white/[0.01] hover:border-primary/20"
+                    }`}
+                  >
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -2134,6 +2170,16 @@ export default function IPTVPlayer() {
                       <p className="text-xs text-zinc-300">
                         Upload local .m3u, .m3u8, or .json playlist files. Stored securely in your browser cache.
                       </p>
+
+                      <div className="mt-3">
+                        <input
+                          type="text"
+                          placeholder="Playlist Name (Optional)"
+                          value={uploadPlaylistName}
+                          onChange={(e) => setUploadPlaylistName(e.target.value)}
+                          className="w-full bg-white/5 border border-white/10 sm:border-white/5 focus-within:border-primary/40 rounded-xl py-2 px-3 text-xs text-white placeholder:text-zinc-400 outline-none transition-colors"
+                        />
+                      </div>
                     </div>
 
                     <div className="mt-4">
@@ -2146,12 +2192,20 @@ export default function IPTVPlayer() {
                       />
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20 text-xs font-bold rounded-xl transition-all shadow-md active:scale-95"
+                        className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20 text-xs font-bold rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
                       >
                         <Upload size={14} />
                         <span>Choose M3U or JSON File</span>
                       </button>
                     </div>
+
+                    {isDragging && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#070414]/90 backdrop-blur-xs pointer-events-none z-10 border-2 border-dashed border-primary m-1 rounded-xl">
+                        <Upload size={28} className="text-primary animate-bounce mb-2" />
+                        <p className="text-xs font-bold text-white">Drop your file here</p>
+                        <p className="text-[9px] text-zinc-400">supports .m3u, .m3u8, .json</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
