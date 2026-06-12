@@ -202,7 +202,7 @@ export default function IPTVPlayer() {
       if (video && !video.paused) {
         setShowControls(false);
       }
-    }, 4000);
+    }, 2000);
   }, []);
 
   const setupUnmuteOnInteraction = useCallback(() => {
@@ -236,14 +236,14 @@ export default function IPTVPlayer() {
     unmuteCleanupRef.current = cleanup;
   }, []);
 
-  // Auto-hide controls after 4s if video is playing
+  // Auto-hide controls after 2s if video is playing
   useEffect(() => {
     const timeout = setTimeout(() => {
       const video = videoRef.current;
       if (video && !video.paused) {
         setShowControls(false);
       }
-    }, 4000);
+    }, 2000);
     controlsTimeoutRef.current = timeout;
     return () => {
       if (controlsTimeoutRef.current) {
@@ -1455,9 +1455,14 @@ export default function IPTVPlayer() {
       ) : loading ? (
         <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full items-center animate-pulse">
           {/* 1. Player Card Skeleton */}
-          <div className="w-full aspect-video rounded-2xl md:rounded-3xl bg-white/[0.01] border border-white/10 sm:border-white/5 flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
-              <Radio size={32} className="text-white/20 animate-pulse" />
+          <div className="w-full flex justify-center">
+            <div 
+              className="w-full aspect-video max-h-[75vh] rounded-2xl md:rounded-3xl bg-white/[0.01] border border-white/10 sm:border-white/5 flex items-center justify-center"
+              style={{ maxWidth: "calc(75vh * 16 / 9)" }}
+            >
+              <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
+                <Radio size={32} className="text-white/20 animate-pulse" />
+              </div>
             </div>
           </div>
 
@@ -1553,7 +1558,7 @@ export default function IPTVPlayer() {
           {/* 1. Player Card */}
           <div
             ref={playerWrapperRef}
-            className="w-full"
+            className="w-full flex justify-center"
           >
             <div
               ref={playerContainerRef}
@@ -1562,9 +1567,10 @@ export default function IPTVPlayer() {
               onDoubleClick={handlePlayerDoubleClick}
               className={`bg-black shadow-2xl group transition-[width,height] duration-200 ${isFullscreen
                     ? "relative w-full h-full bg-black"
-                    : "relative aspect-video rounded-2xl md:rounded-3xl overflow-hidden bg-black border border-white/10 sm:border-white/5 w-full"
+                    : "relative aspect-video max-h-[75vh] mx-auto rounded-2xl md:rounded-3xl overflow-hidden bg-black border border-white/10 sm:border-white/5 w-full"
                 } ${showControls ? "cursor-default" : "cursor-none"
                 }`}
+              style={!isFullscreen ? { maxWidth: "calc(75vh * 16 / 9)" } : undefined}
             >
               <video
                 ref={videoRef}
