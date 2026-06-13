@@ -31,6 +31,11 @@ function convertFile(inputPath, outputPath) {
         return;
       }
 
+      if (channel.type === 'dash') {
+        // Skip DASH streams (standard M3U players generally do not support DASH/MPD natively)
+        return;
+      }
+
       let extinf = '#EXTINF:-1';
       
       if (channel.logo) {
