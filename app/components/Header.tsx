@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
 import Link from "next/link";
@@ -8,25 +7,13 @@ import { usePathname } from "next/navigation";
 import { Server, Tv, HelpCircle } from "lucide-react";
 
 export default function Header() {
-  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const isFtpPage = pathname === "/ftp";
   const isFaqPage = pathname === "/faq";
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
     <header
-      className={`sticky top-0 z-50 w-full border-b transition-all duration-500 ${scrolled
-          ? "bg-[#070414]/85 backdrop-blur-2xl border-white/[0.08] shadow-2xl shadow-black/40"
-          : "bg-transparent border-transparent"
-        }`}
+      className="sticky top-0 z-50 w-full border-b transition-all duration-500 bg-[#070414]/80 backdrop-blur-xl border-white/[0.08] shadow-lg shadow-black/20"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 sm:h-22">

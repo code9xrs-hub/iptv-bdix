@@ -55,7 +55,7 @@ interface Playlist {
 }
 
 const getPlayableUrl = (url: string) => {
-  if (url && url.startsWith("http://")) {
+  if (url && (url.startsWith("http://") || url.startsWith("https://"))) {
     return `/api/iptv/proxy?url=${encodeURIComponent(url)}`;
   }
   return url;
