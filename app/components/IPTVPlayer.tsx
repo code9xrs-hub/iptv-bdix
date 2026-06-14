@@ -2102,6 +2102,19 @@ export default function IPTVPlayer() {
             </div>
           </div>
 
+          {/* Notice Box Card */}
+          <div className="w-full flex items-center justify-between gap-3 p-3.5 glass-card border border-amber-500/25 sm:border-amber-500/15 rounded-2xl md:rounded-3xl bg-white/[0.01] hover:bg-white/[0.03] transition-all duration-300">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex-shrink-0 animate-pulse">
+                <AlertCircle size={18} />
+              </div>
+              <p className="text-xs sm:text-sm text-zinc-300 font-medium leading-relaxed select-text">
+                <span className="text-amber-400 font-black">Notice: </span>
+                If you encounter a blank or black screen, please click the <span className="text-primary font-bold">Reload Stream</span> button in the player controls or <span className="text-primary font-bold">Try Reconnecting</span>.
+              </p>
+            </div>
+          </div>
+
           {/* 2. Grid for Channel Details & Channel Count Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
             {/* Channel Details Card / Skeleton */}
