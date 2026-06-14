@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ClientPopupWrapper from "./components/ClientPopupWrapper";
 import Script from "next/script";
+import MobileNavBar from "./components/MobileNavBar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -92,8 +93,9 @@ export default function RootLayout({
 
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col pb-24 md:pb-0">
         {children}
+        <MobileNavBar />
         <ClientPopupWrapper
           showPopup={showPopup}
           disableWcPopup={disableWcPopup}

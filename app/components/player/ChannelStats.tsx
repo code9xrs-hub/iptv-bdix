@@ -79,7 +79,7 @@ export function ChannelStats({
       )}
 
       {/* Developer Info Card */}
-      <div className="glass-card p-4 sm:p-6 border border-white/10 sm:border-white/5 rounded-2xl md:rounded-3xl flex flex-row items-center justify-between gap-4 text-left bg-white/[0.01] w-full md:col-span-1">
+      <div className="hidden md:flex glass-card p-4 sm:p-6 border border-white/10 sm:border-white/5 rounded-2xl md:rounded-3xl flex-row items-center justify-between gap-4 text-left bg-white/[0.01] w-full md:col-span-1">
         <div className="flex items-center gap-3 flex-shrink-0">
           <div className="relative">
             <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border border-white/15 shadow-md">
