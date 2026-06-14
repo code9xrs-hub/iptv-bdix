@@ -94,28 +94,30 @@ export default function AboutView() {
                     href="https://github.com/SHAJON-404"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 hover:border-white/20 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-md"
+                    className="flex items-center gap-2 px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 hover:border-white/20 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-md"
                   >
                     <FaGithub size={16} />
-                    <span>GitHub Profile</span>
+                    <span>SHAJON-404</span>
                   </a>
                   <a
                     href="https://www.facebook.com/shahmakhdumshajonofficial"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center w-11 h-11 rounded-xl bg-white/5 border border-white/10 hover:border-[#1877F2]/50 text-zinc-300 hover:text-[#1877F2] transition-all duration-300 active:scale-95"
+                    className="flex items-center gap-2 px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-xl bg-zinc-800 hover:bg-[#1877F2]/20 text-white border border-white/10 hover:border-[#1877F2]/30 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-md"
                     title="Facebook"
                   >
-                    <FaFacebook size={18} />
+                    <FaFacebook size={16} />
+                    <span>S. SHAJON</span>
                   </a>
                   <a
                     href="https://youtube.com/@SHAJON-404"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center w-11 h-11 rounded-xl bg-white/5 border border-white/10 hover:border-[#FF0000]/50 text-zinc-300 hover:text-[#FF0000] transition-all duration-300 active:scale-95"
+                    className="flex items-center gap-2 px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-xl bg-zinc-800 hover:bg-[#FF0000]/20 text-white border border-white/10 hover:border-[#FF0000]/30 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-md"
                     title="YouTube"
                   >
-                    <FaYoutube size={18} />
+                    <FaYoutube size={16} />
+                    <span>SHAJON-404</span>
                   </a>
                 </div>
               </div>
