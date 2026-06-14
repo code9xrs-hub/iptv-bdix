@@ -137,12 +137,12 @@ export default function IPTVPlayer() {
 
   // Playlist Management States
   const [playlists, setPlaylists] = useState<Playlist[]>([
+    { id: "fifa", name: "FIFA", type: "default", channels: [] },
+    { id: "bangla", name: "Bangla", type: "default", channels: [] },
     { id: "sports", name: "Sports", type: "default", channels: [] },
     { id: "universal", name: "Universal", type: "default", channels: [] },
-    { id: "bangla", name: "Bangla", type: "default", channels: [] },
-    { id: "fifa", name: "FIFA", type: "default", channels: [] },
   ]);
-  const [activePlaylistId, setActivePlaylistId] = useState<string>("sports");
+  const [activePlaylistId, setActivePlaylistId] = useState<string>("fifa");
 
   // Custom playlist loading states
   const [playlistTab, setPlaylistTab] = useState<"browse" | "manage">("browse");
@@ -704,7 +704,7 @@ export default function IPTVPlayer() {
 
       if (savedActiveId) {
         setTimeout(() => {
-          const resolvedActiveId = savedActiveId === "default" ? "sports" : savedActiveId;
+          const resolvedActiveId = savedActiveId === "default" ? "fifa" : savedActiveId;
           setActivePlaylistId(resolvedActiveId);
         }, 0);
       }
@@ -1193,7 +1193,7 @@ export default function IPTVPlayer() {
     setPlaylists(prev => {
       const updated = prev.filter(p => p.id !== id);
       if (activePlaylistId === id) {
-        setActivePlaylistId("sports");
+        setActivePlaylistId("fifa");
       }
       return updated;
     });
