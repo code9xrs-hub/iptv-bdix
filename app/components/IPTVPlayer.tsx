@@ -159,7 +159,6 @@ export default function IPTVPlayer() {
   const [isPip, setIsPip] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const controlsShownAtRef = useRef<number>(0);
   const unmuteCleanupRef = useRef<(() => void) | null>(null);
 
   const hlsRef = useRef<Hls | null>(null);
@@ -237,12 +236,7 @@ export default function IPTVPlayer() {
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetControlsTimeout = useCallback(() => {
-    setShowControls((prev) => {
-      if (!prev) {
-        controlsShownAtRef.current = Date.now();
-      }
-      return true;
-    });
+    setShowControls(true);
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
@@ -567,33 +561,29 @@ export default function IPTVPlayer() {
       return;
     }
 
+    // If a click timeout is pending, this is the second click of a double-click — cancel single-click action
     if (clickTimeoutRef.current) {
       clearTimeout(clickTimeoutRef.current);
       clickTimeoutRef.current = null;
       return;
     }
 
+    // Delay to distinguish single-click from double-click (YouTube uses ~250ms)
     clickTimeoutRef.current = setTimeout(() => {
-      const timeSinceShown = Date.now() - controlsShownAtRef.current;
-      if (timeSinceShown < 500) {
-        // Controls were just shown, keep them visible and reset the timeout
-        resetControlsTimeout();
-      } else {
-        // Toggle controls visibility
-        setShowControls((prev) => {
-          if (prev) {
-            if (controlsTimeoutRef.current) {
-              clearTimeout(controlsTimeoutRef.current);
-            }
-            return false;
-          } else {
-            resetControlsTimeout();
-            return true;
+      // Toggle controls visibility — hide if showing, show if hidden
+      setShowControls((prev) => {
+        if (prev) {
+          if (controlsTimeoutRef.current) {
+            clearTimeout(controlsTimeoutRef.current);
           }
-        });
-      }
+          return false;
+        } else {
+          resetControlsTimeout();
+          return true;
+        }
+      });
       clickTimeoutRef.current = null;
-    }, 200);
+    }, 250);
   };
 
   const handlePlayerDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -1722,52 +1712,29 @@ export default function IPTVPlayer() {
                 </div>
               )}
 
-              {/* Center Play/Pause Button Overlay */}
-              {playerStatus === "playing" && (isPaused || showControls) && !isBuffering && (
+              {/* Center Play Button Overlay — only when paused */}
+              {playerStatus === "playing" && isPaused && !isBuffering && (
                 <div
                   className="absolute inset-0 flex items-center justify-center bg-black/35 z-10 pointer-events-none"
                 >
-                  <AnimatePresence mode="wait">
-                    {isPaused ? (
-                      <motion.button
-                        key="play-btn"
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.9, opacity: 0 }}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePlayPause();
-                        }}
-                        className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-primary/95 text-white flex items-center justify-center shadow-lg shadow-primary/30 border border-white/10 pointer-events-auto cursor-pointer focus:outline-none"
-                      >
-                        <Play
-                          size={28}
-                          className="fill-white translate-x-0.5 md:w-8 md:h-8"
-                        />
-                      </motion.button>
-                    ) : (
-                      <motion.button
-                        key="pause-btn"
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.9, opacity: 0 }}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePlayPause();
-                        }}
-                        className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-primary/95 text-white flex items-center justify-center shadow-lg shadow-primary/30 border border-white/10 pointer-events-auto cursor-pointer focus:outline-none"
-                      >
-                        <Pause
-                          size={28}
-                          className="fill-white md:w-8 md:h-8"
-                        />
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
+                  <motion.button
+                    key="play-btn"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePlayPause();
+                    }}
+                    className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-primary/95 text-white flex items-center justify-center shadow-lg shadow-primary/30 border border-white/10 pointer-events-auto cursor-pointer focus:outline-none"
+                  >
+                    <Play
+                      size={28}
+                      className="fill-white translate-x-0.5 md:w-8 md:h-8"
+                    />
+                  </motion.button>
                 </div>
               )}
 
