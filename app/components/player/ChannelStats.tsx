@@ -30,52 +30,52 @@ export function ChannelStats({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
       {/* Combined Channel Details & Count Card */}
-      <div className={`md:col-span-2 glass-card p-4 sm:p-6 border border-white/10 sm:border-white/5 rounded-2xl md:rounded-3xl bg-white/[0.01] w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+      <div className={`md:col-span-2 glass-card p-3 sm:p-4 border border-white/10 sm:border-white/5 rounded-2xl md:rounded-3xl bg-white/[0.01] w-full flex items-center justify-between gap-3 ${
         playerStatus === "loading" ? "animate-pulse" : ""
       }`}>
         
         {/* Left Side: Channel details */}
-        <div className="flex items-center gap-4 min-w-0 flex-1 w-full sm:w-auto">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           {selectedChannel ? (
             <motion.div
               key={selectedChannel.id}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-4 min-w-0 w-full"
+              className="flex items-center gap-3 min-w-0 w-full"
             >
               {selectedChannel.logo ? (
                 <Image
                   src={selectedChannel.logo}
                   alt={selectedChannel.name}
-                  width={56}
-                  height={56}
+                  width={48}
+                  height={48}
                   onError={(e) => {
                     (e.currentTarget as HTMLElement).style.display = "none";
                   }}
-                  className="w-10 h-10 sm:w-14 sm:h-14 object-contain rounded-xl sm:rounded-2xl bg-white/5 p-0.5 sm:p-1 border border-white/10 flex-shrink-0"
+                  className="w-10 h-10 sm:w-12 sm:h-12 object-contain rounded-xl bg-white/5 p-0.5 border border-white/10 flex-shrink-0"
                 />
               ) : (
-                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-primary/30 to-violet-500/30 flex items-center justify-center font-bold text-sm sm:text-base text-primary border border-primary/20 flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-tr from-primary/30 to-violet-500/30 flex items-center justify-center font-bold text-sm sm:text-base text-primary border border-primary/20 flex-shrink-0">
                   {getInitials(selectedChannel.name)}
                 </div>
               )}
-              <div className="space-y-1 min-w-0">
-                <h2 className="text-base sm:text-lg md:text-xl font-bold truncate">
+              <div className="space-y-0.5 min-w-0">
+                <h2 className="text-sm sm:text-base md:text-lg font-bold truncate">
                   {selectedChannel.name}
                 </h2>
-                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-primary bg-primary/10 px-1.5 sm:px-2 py-0.5 rounded border border-primary/20 hidden sm:block w-fit">
+                <span className="text-[8px] sm:text-[9px] uppercase font-bold tracking-widest text-primary bg-primary/10 px-1.5 sm:px-2 py-0.5 rounded border border-primary/20 hidden sm:block w-fit">
                   {selectedChannel.group}
                 </span>
               </div>
             </motion.div>
           ) : (
-            <div className="flex items-center gap-4 min-w-0 w-full">
-              <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 border border-primary/20 flex-shrink-0 flex items-center justify-center">
-                <Tv size={20} className="text-primary" />
+            <div className="flex items-center gap-3 min-w-0 w-full">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 border border-primary/20 flex-shrink-0 flex items-center justify-center">
+                <Tv size={18} className="text-primary" />
               </div>
-              <div className="space-y-1 min-w-0">
-                <h2 className="text-base sm:text-lg font-bold text-gray-300">Select a Channel</h2>
-                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-zinc-400">
+              <div className="space-y-0.5 min-w-0">
+                <h2 className="text-sm sm:text-base font-bold text-gray-300">Select a Channel</h2>
+                <span className="text-[8px] sm:text-[9px] uppercase font-bold tracking-widest text-zinc-400">
                   Choose from the list below
                 </span>
               </div>
@@ -83,21 +83,20 @@ export function ChannelStats({
           )}
         </div>
 
-        {/* Divider */}
-        <div className="hidden sm:block w-[1px] h-10 bg-white/10" />
-        <div className="sm:hidden w-full h-[1px] bg-white/5 my-1" />
+        {/* Vertical Divider */}
+        <div className="w-[1px] h-8 bg-white/10 flex-shrink-0" />
 
-        {/* Right Side: Total Channels Count */}
-        <div className="flex items-center gap-3 w-full sm:w-auto sm:justify-end">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
-            <Tv size={16} className="animate-pulse" />
+        {/* Right Side: Total Count */}
+        <div className="flex items-center gap-2 flex-shrink-0 pl-1">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+            <Tv size={15} />
           </div>
           <div className="space-y-0.5 min-w-0">
             <p className="text-[8px] sm:text-[9px] uppercase font-bold tracking-widest text-zinc-400 truncate">
-              Total Channels
+              Total
             </p>
             <h3 className="text-xs sm:text-sm md:text-base font-bold text-emerald-400 truncate">
-              {totalChannels} Channels
+              {totalChannels}
             </h3>
           </div>
         </div>
