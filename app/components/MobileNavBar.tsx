@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Server, HelpCircle, User, Trophy } from "lucide-react";
+import { Home, Server, User, Trophy } from "lucide-react";
 
 export default function MobileNavBar() {
   const pathname = usePathname();

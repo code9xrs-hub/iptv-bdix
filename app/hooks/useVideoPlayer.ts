@@ -532,10 +532,6 @@ export function useVideoPlayer(
         nativeErrorCleanupRef.current();
         nativeErrorCleanupRef.current = null;
       }
-      video.removeAttribute("src");
-      if (!getIsIOS()) {
-        video.load();
-      }
 
       // Check if it is a DASH stream and we are on iOS/iPadOS
       const isDashStream = chan.type === "dash" || chan.url.endsWith(".mpd");
@@ -557,10 +553,23 @@ export function useVideoPlayer(
           video.muted = true;
           setIsMuted(true);
         }
+
+        const unlockPromise = video.play();
+        if (unlockPromise !== undefined) {
+          unlockPromise.catch(() => { /* ignore */ });
+        }
       } else {
         video.volume = volumeRef.current;
         video.muted = isMutedRef.current;
       }
+
+      video.removeAttribute("src");
+      if (!getIsIOS()) {
+        video.load();
+      }
+
+      setTimeout(() => {
+        if (loadedUrlRef.current !== chan.url) return;
 
       const attemptPlay = () => {
         video
@@ -865,6 +874,7 @@ export function useVideoPlayer(
         setPlayerError("Your browser does not support stream playback.");
         setPlayerStatus("error");
       }
+      }, 50);
     },
     [setupUnmuteOnInteraction]
   );

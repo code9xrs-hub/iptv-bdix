@@ -1,16 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Trophy,
-  Calendar,
-  MapPin,
   Search,
   Filter,
   RefreshCw,
   AlertTriangle,
-  Clock,
   ChevronRight,
   ListFilter,
   X,

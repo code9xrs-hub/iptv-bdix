@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { WorldCupData, Match } from "../types";
+import { WorldCupData } from "../types";
 import { convertTimeToDhaka, calculateGroupStandings, resolveTeamName } from "../utils/helpers";
 import { COUNTRY_CODES } from "../utils/constants";
 
@@ -56,11 +56,17 @@ export function useFixtures() {
   };
 
   useEffect(() => {
-    fetchFixtures();
+    // Use setTimeout to avoid calling setState synchronously within the effect
+    const timeoutId = setTimeout(() => {
+      fetchFixtures();
+    }, 0);
     const intervalId = setInterval(() => {
       fetchFixtures(true); // force refresh every 30 mins
     }, CACHE_DURATION);
-    return () => clearInterval(intervalId);
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
   }, []);
 
   const handleRetry = () => fetchFixtures(true);
