@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { User, Heart, ArrowLeft } from "lucide-react";
+import { User, Heart, ArrowLeft, Coins } from "lucide-react";
 import { FaGithub, FaTelegram, FaFacebook, FaYoutube } from "react-icons/fa6";
 import Link from "next/link";
 import BackgroundScene from "./BackgroundScene";
@@ -124,34 +124,73 @@ export default function AboutView() {
             </div>
           </motion.div>
 
-          {/* Project Details / Contribution Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-full mt-6 glass-card p-6 sm:p-8 border border-white/10 sm:border-white/5 rounded-3xl bg-white/[0.01] backdrop-blur-sm text-center max-w-2xl mx-auto space-y-4"
-          >
-            <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
-              <Heart size={20} className="animate-pulse" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-bold">Support the IPTV Project</h3>
-            <p className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed">
-              This player is open-source and free forever. If you like this project, 
-              please give it a star on GitHub! It keeps me motivated to push regular updates, 
-              fix bugs, and integrate new live streaming features.
-            </p>
-            <div className="pt-2">
-              <a
-                href="https://github.com/SHAJON-404/iptv"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-violet-600 hover:opacity-95 text-white font-extrabold text-xs sm:text-sm transition-all duration-300 shadow-md shadow-primary/10 active:scale-95 cursor-pointer"
-              >
-                <FaGithub size={15} />
-                <span>Star Repository on GitHub</span>
-              </a>
-            </div>
-          </motion.div>
+          {/* Bottom Cards Grid */}
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {/* GitHub Support Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="glass-card p-6 sm:p-8 border border-white/10 sm:border-white/5 rounded-3xl bg-white/[0.01] backdrop-blur-sm flex flex-col justify-between items-center text-center space-y-4"
+            >
+              <div className="space-y-4 flex flex-col items-center">
+                <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
+                  <Heart size={20} className="animate-pulse" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold">Loving This Project?</h3>
+                <p className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed">
+                  This player is open-source and free forever. If you like this project, 
+                  please give it a star on GitHub! It keeps the developer motivated to push regular updates, 
+                  fix bugs, and integrate new live streaming features.
+                </p>
+              </div>
+              <div className="pt-2 w-full">
+                <a
+                  href="https://github.com/SHAJON-404/iptv"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 w-full px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-violet-600 hover:opacity-95 text-white font-extrabold text-xs sm:text-sm transition-all duration-300 shadow-md shadow-primary/10 active:scale-95 cursor-pointer"
+                >
+                  <FaGithub size={15} />
+                  <span>Star Repository on GitHub</span>
+                </a>
+              </div>
+            </motion.div>
+
+            {/* Donation Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="glass-card p-6 sm:p-8 border border-white/10 sm:border-white/5 rounded-3xl bg-white/[0.01] backdrop-blur-sm flex flex-col justify-between items-center text-center space-y-4"
+            >
+              <div className="space-y-3 flex flex-col items-center w-full">
+                <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                  <Coins size={20} className="animate-bounce" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold">Support the Developer</h3>
+                <p className="text-xs sm:text-sm text-zinc-400 font-medium leading-relaxed">
+                  If you want to support the developer&apos;s work, you can donate via cryptocurrency:
+                </p>
+
+                {/* Donation details list */}
+                <div className="w-full text-left space-y-2 pt-1 font-mono text-[10px] sm:text-xs">
+                  <div className="flex flex-col p-2 bg-white/[0.02] border border-white/5 rounded-xl">
+                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider">Binance UID</span>
+                    <span className="text-zinc-200 font-semibold select-all break-all">839622149</span>
+                  </div>
+                  <div className="flex flex-col p-2 bg-white/[0.02] border border-white/5 rounded-xl">
+                    <span className="text-[9px] font-bold text-[#F3BA2F] uppercase tracking-wider">BEP20 (BNB/USDT)</span>
+                    <span className="text-zinc-200 font-semibold select-all break-all">0x22d4f314acbf6055b0a37df8df68f9cd40ba889a</span>
+                  </div>
+                  <div className="flex flex-col p-2 bg-white/[0.02] border border-white/5 rounded-xl">
+                    <span className="text-[9px] font-bold text-[#EC0627] uppercase tracking-wider">TRC20 (TRX/USDT)</span>
+                    <span className="text-zinc-200 font-semibold select-all break-all">TAsPdCxkX9CeErJ4vw7xBHfZDT6vpdfmwH</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </main>
