@@ -84,48 +84,48 @@ export default function AboutView() {
               </p>
 
               {/* Social Channels Panel */}
-              <div className="pt-2">
-                <p className="text-[10px] sm:text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">
+              <div className="pt-2 w-full">
+                <p className="text-[10px] sm:text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3 text-center md:text-left">
                   Connect & Support
                 </p>
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-xl mx-auto md:mx-0">
                   <a
                     href="https://t.me/SHAJON"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4.5 py-2.5 rounded-xl bg-[#26A5E4] hover:bg-[#26A5E4]/90 text-white font-extrabold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-md shadow-[#26A5E4]/15"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.02] hover:bg-[#26A5E4]/10 text-zinc-300 hover:text-[#26A5E4] border border-white/10 hover:border-[#26A5E4]/50 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-sm hover:shadow-[0_0_15px_rgba(38,165,228,0.15)] cursor-pointer"
                   >
                     <FaTelegram size={16} />
-                    <span>Telegram Contact</span>
+                    <span>Telegram</span>
                   </a>
                   <a
                     href="https://github.com/SHAJON-404"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 hover:border-white/20 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-md"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.02] hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 hover:border-white/30 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-sm hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] cursor-pointer"
                   >
                     <FaGithub size={16} />
-                    <span>SHAJON-404</span>
+                    <span>GitHub</span>
                   </a>
                   <a
                     href="https://www.facebook.com/shahmakhdumshajonofficial"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-xl bg-zinc-800 hover:bg-[#1877F2]/20 text-white border border-white/10 hover:border-[#1877F2]/30 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-md"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.02] hover:bg-[#1877F2]/10 text-zinc-300 hover:text-[#1877F2] border border-white/10 hover:border-[#1877F2]/50 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-sm hover:shadow-[0_0_15px_rgba(24,119,242,0.15)] cursor-pointer"
                     title="Facebook"
                   >
                     <FaFacebook size={16} />
-                    <span>S. SHAJON</span>
+                    <span>Facebook</span>
                   </a>
                   <a
                     href="https://youtube.com/@SHAJON-404"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-xl bg-zinc-800 hover:bg-[#FF0000]/20 text-white border border-white/10 hover:border-[#FF0000]/30 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-md"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.02] hover:bg-[#FF0000]/10 text-zinc-300 hover:text-[#FF0000] border border-white/10 hover:border-[#FF0000]/50 font-bold text-xs sm:text-sm transition-all duration-300 active:scale-95 shadow-sm hover:shadow-[0_0_15px_rgba(255,0,0,0.15)] cursor-pointer"
                     title="YouTube"
                   >
                     <FaYoutube size={16} />
-                    <span>SHAJON-404</span>
+                    <span>YouTube</span>
                   </a>
                 </div>
               </div>
