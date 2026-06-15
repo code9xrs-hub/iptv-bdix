@@ -54,9 +54,7 @@ interface WorldCupData {
   matches: Match[];
 }
 
-interface FixturesClientProps {
-  initialData: WorldCupData | null;
-}
+
 
 // 2-Letter ISO Country Mappings for FlagCDN
 const COUNTRY_CODES: Record<string, string> = {
@@ -705,10 +703,13 @@ const MatchCard = ({ match, idx, isToday = false }: MatchCardProps) => {
   );
 };
 
-export default function FixturesClient({ initialData }: FixturesClientProps) {
-  const [data, setData] = useState<WorldCupData | null>(initialData);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(initialData ? null : "Failed to load fixtures.");
+const CACHE_KEY = "worldcup_fixtures_data";
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+export default function FixturesClient() {
+  const [data, setData] = useState<WorldCupData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Tabs: 'fixtures' or 'bracket'
   const [activeTab, setActiveTab] = useState<"fixtures" | "bracket">("fixtures");
@@ -730,16 +731,33 @@ export default function FixturesClient({ initialData }: FixturesClientProps) {
   const [selectedGroup, setSelectedGroup] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<"all" | "played" | "upcoming">("upcoming");
 
-  const handleRetry = async () => {
-    setLoading(true);
-    setError(null);
+  const fetchFixtures = async (force = false) => {
     try {
+      if (!force) {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { timestamp, data: cachedData } = JSON.parse(cached);
+          if (Date.now() - timestamp < CACHE_DURATION) {
+            setData(cachedData);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      setLoading(true);
+      setError(null);
       const url = "https://raw.githubusercontent.com/openfootball/worldcup.json/refs/heads/master/2026/worldcup.json";
       const res = await fetch(url);
       if (!res.ok) {
         throw new Error(`Failed to fetch fixtures: ${res.status}`);
       }
       const jsonData = await res.json();
+      
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        timestamp: Date.now(),
+        data: jsonData
+      }));
       setData(jsonData);
     } catch (err: unknown) {
       console.error(err);
@@ -748,6 +766,16 @@ export default function FixturesClient({ initialData }: FixturesClientProps) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchFixtures();
+    const intervalId = setInterval(() => {
+      fetchFixtures(true); // force refresh every 30 mins
+    }, CACHE_DURATION);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const handleRetry = () => fetchFixtures(true);
 
   // Convert time for all matches
   const processedMatches = data
