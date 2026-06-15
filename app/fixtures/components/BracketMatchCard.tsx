@@ -60,9 +60,13 @@ export const BracketMatchCard = ({
       </div>
 
       {/* Match DateTime */}
-      <div className="flex items-center gap-1 border-t border-white/5 px-3 py-1 bg-white/[0.01] text-[8px] font-semibold text-zinc-500">
-        <Clock size={8} className="text-zinc-500" />
-        <span className="truncate">{match.formattedDateTime?.split(" at ")[1] || match.time} (BST)</span>
+      <div className="flex items-center gap-1 border-t border-white/5 px-3 py-1.5 bg-white/[0.02] text-[8px] font-semibold text-zinc-300">
+        <Clock size={8} className="text-zinc-400 flex-shrink-0" />
+        <span className="truncate">
+          {match.formattedDateTime
+            ? match.formattedDateTime.replace(/^[A-Za-z]+, /, "").replace(/ \d{4} at/, ",")
+            : `${match.date} ${match.time}`}
+        </span>
       </div>
     </div>
   );
