@@ -72,6 +72,9 @@ export default function IPTVPlayer() {
     activeSeekIndicator,
     viewerCount,
     isPipSupported,
+    availableQualities,
+    currentQuality,
+    handleQualityChange,
     handlePlayPause,
     handleMuteUnmute,
     handleVolumeChangeSlider,
@@ -288,6 +291,9 @@ export default function IPTVPlayer() {
               showControls={showControls}
               activeSeekIndicator={activeSeekIndicator}
               isPipSupported={isPipSupported}
+              availableQualities={availableQualities}
+              currentQuality={currentQuality}
+              handleQualityChange={handleQualityChange}
               handlePlayPause={handlePlayPause}
               handleMuteUnmute={handleMuteUnmute}
               handleVolumeChangeSlider={handleVolumeChangeSlider}

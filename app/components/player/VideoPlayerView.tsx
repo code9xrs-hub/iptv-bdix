@@ -15,9 +15,13 @@ import {
   PictureInPicture,
   ChevronsLeft,
   ChevronsRight,
-  Radio
+  Radio,
+  Settings,
+  Check,
+  ChevronLeft
 } from "lucide-react";
 import { FaTelegram } from "react-icons/fa6";
+import { StreamQuality } from "../../hooks/useVideoPlayer";
 
 interface VideoPlayerViewProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -33,6 +37,9 @@ interface VideoPlayerViewProps {
   showControls: boolean;
   activeSeekIndicator: { side: "left" | "right"; visible: boolean };
   isPipSupported: boolean;
+  availableQualities: StreamQuality[];
+  currentQuality: number | "auto";
+  handleQualityChange: (qualityId: number | "auto") => void;
   handlePlayPause: () => void;
   handleMuteUnmute: () => void;
   handleVolumeChangeSlider: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -110,6 +117,9 @@ export function VideoPlayerView({
   showControls,
   activeSeekIndicator,
   isPipSupported,
+  availableQualities,
+  currentQuality,
+  handleQualityChange,
   handlePlayPause,
   handleMuteUnmute,
   handleVolumeChangeSlider,
@@ -120,6 +130,30 @@ export function VideoPlayerView({
   handleReload,
   handleMouseMove,
 }: VideoPlayerViewProps) {
+  const [showSettings, setShowSettings] = React.useState(false);
+
+  // Close settings when clicking outside
+  const settingsRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    if (showSettings) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showSettings]);
+
+  React.useEffect(() => {
+    if (!showControls) {
+      setShowSettings(false);
+    }
+  }, [showControls]);
+
   return (
     <div
       ref={playerContainerRef}
@@ -360,6 +394,88 @@ export function VideoPlayerView({
             >
               <RotateCw size={18} />
             </button>
+
+            {/* Settings / Quality Menu */}
+            {availableQualities.length > 1 && (
+              <div className="relative" ref={settingsRef}>
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className={`px-1.5 py-1 rounded-lg hover:bg-white/10 text-white transition-colors ${
+                    showSettings ? "bg-white/10" : ""
+                  }`}
+                  title="Quality"
+                >
+                  <span className="text-[13px] sm:text-[15px] font-medium tracking-wide drop-shadow-md">
+                    {currentQuality === 'auto' ? 'Auto' : availableQualities.find(q => q.id === currentQuality)?.name || 'Auto'}
+                  </span>
+                </button>
+                
+                <AnimatePresence>
+                  {showSettings && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute bottom-full right-0 mb-3 w-56 max-h-72 overflow-y-auto custom-scrollbar bg-[#0f0f0f]/80 backdrop-blur-2xl border border-white/10 rounded-2xl py-2 shadow-[0_8px_32px_rgba(0,0,0,0.6)] z-50 origin-bottom-right"
+                    >
+                      <div className="px-3 py-2 text-sm font-bold text-white flex items-center mb-1 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => setShowSettings(false)}>
+                        <ChevronLeft size={16} className="mr-2" />
+                        Quality
+                      </div>
+                      {availableQualities.filter(q => q.id !== 'auto').map((q) => (
+                        <button
+                          key={q.id}
+                          onClick={() => {
+                            handleQualityChange(q.id);
+                            setShowSettings(false);
+                          }}
+                          className={`w-full flex items-center justify-start px-3 py-2.5 text-sm transition-colors ${
+                            currentQuality === q.id
+                              ? "bg-white/10 text-white font-bold"
+                              : "text-zinc-200 hover:bg-white/10 hover:text-white"
+                          }`}
+                        >
+                          <div className="flex items-center justify-center w-6 mr-1.5">
+                            {currentQuality === q.id && <Check size={16} className="text-white" />}
+                          </div>
+                          <span className="flex items-center">
+                            {q.name}
+                            {q.height && q.height >= 2160 && (
+                              <span className="text-[10px] font-black text-rose-500 ml-1.5 leading-none mt-0.5">4K</span>
+                            )}
+                            {q.height && q.height >= 1080 && q.height < 2160 && (
+                              <span className="text-[10px] font-black text-rose-500 ml-1.5 leading-none mt-0.5">HD</span>
+                            )}
+                          </span>
+                        </button>
+                      ))}
+
+                      {/* Auto Option at the bottom */}
+                      {availableQualities.find(q => q.id === 'auto') && (
+                        <div className="mt-1 pt-1 border-t border-white/10">
+                          <button
+                            onClick={() => {
+                              handleQualityChange('auto');
+                              setShowSettings(false);
+                            }}
+                            className={`w-full flex items-center justify-start px-3 py-2.5 text-sm transition-colors ${
+                              currentQuality === 'auto'
+                                ? "bg-white/10 text-white font-bold"
+                                : "text-zinc-200 hover:bg-white/10 hover:text-white"
+                            }`}
+                          >
+                            <div className="flex items-center justify-center w-6 mr-1.5">
+                              {currentQuality === 'auto' && <Check size={16} className="text-white" />}
+                            </div>
+                            <span className="flex items-center">Auto</span>
+                          </button>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             <button
               onClick={handleFullscreen}

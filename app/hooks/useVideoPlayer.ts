@@ -15,6 +15,13 @@ const getPlayableUrl = (url: string) => {
   return url;
 };
 
+export interface StreamQuality {
+  id: number | "auto";
+  name: string;
+  height?: number;
+  bandwidth?: number;
+}
+
 export function useVideoPlayer(
   selectedChannel: Channel | null,
   retryKey: number,
@@ -50,6 +57,10 @@ export function useVideoPlayer(
   const loadedUrlRef = useRef<string | null>(null);
   const nativeErrorCleanupRef = useRef<(() => void) | null>(null);
   const [viewerCount, setViewerCount] = useState<number | null>(null);
+
+  // Quality Customization States
+  const [availableQualities, setAvailableQualities] = useState<StreamQuality[]>([{ id: "auto", name: "Auto" }]);
+  const [currentQuality, setCurrentQuality] = useState<number | "auto">("auto");
 
   // Sync viewers session
   useEffect(() => {
@@ -503,6 +514,34 @@ export function useVideoPlayer(
     }, 650);
   };
 
+  const handleQualityChange = useCallback((qualityId: number | "auto") => {
+    setCurrentQuality(qualityId);
+  
+    if (shakaRef.current) {
+      const player = shakaRef.current;
+      if (qualityId === "auto") {
+        player.configure({ abr: { enabled: true } });
+      } else {
+        player.configure({ abr: { enabled: false } });
+        const tracks = player.getVariantTracks();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const selectedTrack = tracks.find((t: any) => t.id === qualityId);
+        if (selectedTrack) {
+          player.selectVariantTrack(selectedTrack, true);
+        }
+      }
+    } else if (hlsRef.current) {
+      const hls = hlsRef.current;
+      if (qualityId === "auto") {
+        hls.currentLevel = -1;
+      } else {
+        hls.currentLevel = qualityId as number;
+      }
+    }
+    
+    resetControlsTimeout();
+  }, [resetControlsTimeout]);
+
   const handleMouseMove = () => {
     resetControlsTimeout();
   };
@@ -515,6 +554,8 @@ export function useVideoPlayer(
       setPlayerStatus("loading");
       setPlayerError(null);
       setIsBuffering(false);
+      setAvailableQualities([{ id: "auto", name: "Auto" }]);
+      setCurrentQuality("auto");
       loadedUrlRef.current = chan.url;
 
       if (hlsRef.current) {
@@ -713,6 +754,45 @@ export function useVideoPlayer(
               return;
             }
 
+            // Extract qualities
+            try {
+              const tracks = player.getVariantTracks();
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const videoTracks = tracks.filter((t: any) => t.type === "variant" && t.videoId !== null);
+              const qualitiesMap = new Map();
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              videoTracks.forEach((t: any) => {
+                if (t.height) {
+                  // Only add if it's the highest bandwidth for this height, or simply just add one per height
+                  const existing = qualitiesMap.get(t.height);
+                  if (!existing || t.bandwidth > existing.bandwidth) {
+                    qualitiesMap.set(t.height, {
+                      id: t.id,
+                      name: `${t.height}p`,
+                      height: t.height,
+                      bandwidth: t.bandwidth
+                    });
+                  }
+                } else if (t.bandwidth) {
+                  qualitiesMap.set(t.bandwidth, {
+                    id: t.id,
+                    name: `${Math.round(t.bandwidth / 1000)} kbps`,
+                    height: 0,
+                    bandwidth: t.bandwidth
+                  });
+                }
+              });
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const extractedQualities = Array.from(qualitiesMap.values())
+                .filter((q: any) => q.height > 0)
+                .sort((a: any, b: any) => b.height - a.height);
+              if (extractedQualities.length > 0) {
+                setAvailableQualities([{ id: "auto", name: "Auto" }, ...extractedQualities]);
+              }
+            } catch (e) {
+              console.warn("Failed to extract Shaka qualities", e);
+            }
+
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             player.addEventListener("buffering", (event: any) => {
               if (event.buffering) {
@@ -758,7 +838,25 @@ export function useVideoPlayer(
           hls.loadSource(playableUrl);
         });
 
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
+          try {
+            const levels = data.levels;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const extractedQualities = levels.map((l: any, i: number) => ({
+              id: i,
+              name: l.height ? `${l.height}p` : `${Math.round(l.bitrate / 1000)} kbps`,
+              height: l.height,
+              bandwidth: l.bitrate
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            })).filter((q: any) => q.height > 0)
+            .sort((a: any, b: any) => b.height - a.height);
+            if (extractedQualities.length > 0) {
+              setAvailableQualities([{ id: "auto", name: "Auto" }, ...extractedQualities]);
+            }
+          } catch (e) {
+            console.warn("Failed to extract HLS qualities", e);
+          }
+
           if (!video.paused) {
             setPlayerStatus("playing");
             setIsPaused(false);
@@ -935,6 +1033,9 @@ export function useVideoPlayer(
     activeSeekIndicator,
     viewerCount,
     isPipSupported,
+    availableQualities,
+    currentQuality,
+    handleQualityChange,
     handlePlayPause,
     handleMuteUnmute,
     handleVolumeChangeSlider,
