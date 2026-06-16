@@ -368,11 +368,6 @@ export function VideoPlayerView({
             </div>
           </div>
 
-          {/* Center LIVE badge */}
-          <div className="flex items-center gap-1 bg-rose-600/90 text-white font-bold text-[9px] tracking-wider uppercase px-2 py-0.5 rounded border border-rose-500/30 animate-pulse select-none">
-            <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
-            <span>LIVE</span>
-          </div>
 
           {/* Right controls */}
           <div className="flex items-center gap-2">
