@@ -128,6 +128,15 @@ export function useIPTVPlaylists() {
     }
   }, []);
 
+  // Auto-switch to browse tab when playlists become available
+  useEffect(() => {
+    if (isHydrated && playlists.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPlaylistTab("browse");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playlists.length > 0, isHydrated]);
+
   // Save custom playlists to localStorage whenever they change
   useEffect(() => {
     try {
