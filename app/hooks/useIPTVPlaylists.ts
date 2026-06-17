@@ -8,7 +8,7 @@ export interface Channel {
   logo: string;
   group: string;
   url: string;
-  type?: "dash" | "hls";
+  type?: "dash" | "hls" | "ts";
   kid?: string;
   key?: string;
   no_proxy?: boolean;
@@ -417,7 +417,7 @@ export function useIPTVPlaylists() {
     url?: string;
     streamUrl?: string;
     link?: string;
-    type?: "dash" | "hls";
+    type?: "dash" | "hls" | "ts";
     kid?: string;
     key?: string;
     no_proxy?: boolean;

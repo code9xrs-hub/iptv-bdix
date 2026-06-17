@@ -51,6 +51,8 @@ export function useVideoPlayer(
 
   const hlsRef = useRef<Hls | null>(null);
   const shakaRef = useRef<ShakaPlayer | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mpegtsRef = useRef<any>(null);
   const userMutedRef = useRef(false);
   const isMutedRef = useRef(isMuted);
   const volumeRef = useRef(volume);
@@ -569,6 +571,11 @@ export function useVideoPlayer(
         shakaRef.current.destroy().catch(() => { });
         shakaRef.current = null;
       }
+      
+      if (mpegtsRef.current) {
+        mpegtsRef.current.destroy();
+        mpegtsRef.current = null;
+      }
 
       video.pause();
       if (nativeErrorCleanupRef.current) {
@@ -576,11 +583,12 @@ export function useVideoPlayer(
         nativeErrorCleanupRef.current = null;
       }
 
-      // Check if it is a DASH stream and we are on iOS/iPadOS
+      // Check if it is a DASH/TS stream and we are on iOS/iPadOS
       const isDashStream = chan.type === "dash" || chan.url.endsWith(".mpd");
-      if (isDashStream && getIsIOS()) {
+      const isTsStream = !isDashStream && (chan.url.includes(".ts") || chan.type === "ts");
+      if ((isDashStream || isTsStream) && getIsIOS()) {
         setPlayerStatus("error");
-        setPlayerError("Not supported in iOS/iPad OS");
+        setPlayerError("DASH/TS streams are not supported in iOS/iPad OS");
         return;
       }
 
@@ -650,6 +658,7 @@ export function useVideoPlayer(
       };
 
       const isDash = chan.type === "dash" || chan.url.endsWith(".mpd");
+      const isTs = !isDash && (chan.url.includes(".ts") || chan.type === "ts");
 
       if (isDash) {
         (async () => {
@@ -822,7 +831,7 @@ export function useVideoPlayer(
             if (loadedUrlRef.current !== chan.url) return;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const errObj = err as any;
-            let errMsg = "DASH / MPD load failed";
+            let errMsg = "DASH / TS load failed";
             if (errObj) {
               if (errObj.code) errMsg += ` (Code: ${errObj.code})`;
               if (errObj.category) errMsg += ` (Category: ${errObj.category})`;
@@ -834,6 +843,53 @@ export function useVideoPlayer(
             }
             console.error("[SHAKA] Load error detail:", JSON.stringify(errObj), errMsg);
             setPlayerError(errMsg);
+            setPlayerStatus("error");
+          }
+        })();
+      } else if (isTs) {
+        (async () => {
+          try {
+            const mpegtsModule = await import("mpegts.js");
+            const mpegts = mpegtsModule.default || mpegtsModule;
+            
+            if (!mpegts.getFeatureList().mseLivePlayback) {
+              setPlayerError("Your browser does not support MPEG-TS playback.");
+              setPlayerStatus("error");
+              return;
+            }
+
+            if (loadedUrlRef.current !== chan.url) return;
+
+            const playableUrl = getPlayableUrl(chan.url, chan.no_proxy);
+            // Convert to absolute URL because mpegts.js Web Worker fails to parse relative URLs
+            const absoluteUrl = new URL(playableUrl, window.location.origin).href;
+
+            const player = mpegts.createPlayer({
+              type: 'mpegts',
+              isLive: true,
+              url: absoluteUrl,
+            }, {
+              enableWorker: true,
+              lazyLoadMaxDuration: 3 * 60,
+              seekType: 'range',
+            });
+
+            mpegtsRef.current = player;
+            player.attachMediaElement(video);
+            player.load();
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            player.on(mpegts.Events.ERROR, (errorType: string, errorDetail: string, errorInfo: any) => {
+              console.error("[MPEGTS] Error:", errorType, errorDetail, errorInfo);
+              setPlayerError(`TS stream error: ${errorDetail}`);
+              setPlayerStatus("error");
+            });
+
+            attemptPlay();
+
+          } catch (err) {
+            console.error("Failed to load mpegts.js", err);
+            setPlayerError("Failed to load TS player module.");
             setPlayerStatus("error");
           }
         })();
@@ -1018,6 +1074,10 @@ export function useVideoPlayer(
       if (shakaRef.current) {
         shakaRef.current.destroy().catch(() => { });
         shakaRef.current = null;
+      }
+      if (mpegtsRef.current) {
+        mpegtsRef.current.destroy();
+        mpegtsRef.current = null;
       }
       if (video) {
         video.removeAttribute("src");

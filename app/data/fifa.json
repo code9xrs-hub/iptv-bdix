@@ -9,6 +9,32 @@
         "key": "68f96d618b0b956b008c445896a25a79"
     },
     {
+        "name": "D Sports HLS",
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/5/5a/DSports.png",
+        "group": "FIFA",
+        "url": "https://1nyaler.streamhostingcdn.top/stream/106/index.m3u8"
+    },
+    {
+        "name": "Football World Cup 2026",
+        "logo": "https://carboncredits.com/wp-content/uploads/2025/09/shutterstock_2306088965-e1757112807302.jpg",
+        "group": "Football World Cup 2026",
+        "url": "http://starhub.pro/live/farhat-3379/67897-913379/744524.ts",
+        "status": "live",
+        "verified_at": "2026-06-17T13:35:14.093998",
+        "status_code": 200,
+        "content_type": "video/mp2t"
+    },
+    {
+        "name": "Football World Cup 2026 4K",
+        "logo": "https://carboncredits.com/wp-content/uploads/2025/09/shutterstock_2306088965-e1757112807302.jpg",
+        "group": "Football World Cup 2026",
+        "url": "http://starhub.pro/live/farhat-3379/67897-913379/744527.ts",
+        "status": "live",
+        "verified_at": "2026-06-17T13:35:14.196308",
+        "status_code": 200,
+        "content_type": "video/mp2t"
+    },
+    {
         "name": "FOX English (Germany VPN)",
         "logo": "https://upload.wikimedia.org/wikipedia/en/thumb/1/17/2026_FIFA_World_Cup_emblem.svg/250px-2026_FIFA_World_Cup_emblem.svg.png",
         "group": "FIFA",
@@ -25,7 +51,13 @@
         "url": "https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/Caze_TV.m3u8"
     },
     {
-        "name": "LOL",
+        "name": "Somoy TV",
+        "logo": "https://images.seeklogo.com/logo-png/61/1/cazetv-logo-png_seeklogo-619708.png",
+        "group": "FIFA",
+        "url": "https://live.thebosstv.com:30443/dwlive/Somoy-TV/chunks.m3u8"
+    },
+    {
+        "name": "Bein Sports",
         "logo": "https://i.ibb.co.com/S7tZS6cg/Bein-Sports-1-Direct.png",
         "group": "FIFA",
         "url": "https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8"
@@ -37,16 +69,22 @@
         "url": "https://1nyaler.streamhostingcdn.top/stream/32/index.m3u8"
     },
     {
-        "name": "GOLIVE - English",
-        "logo": "https://rtb-images.glueapi.io/320x0/live/GoLiveNew.png",
+        "name": "FOX English (No VPN)",
+        "logo": "https://upload.wikimedia.org/wikipedia/en/thumb/1/17/2026_FIFA_World_Cup_emblem.svg/250px-2026_FIFA_World_Cup_emblem.svg.png",
         "group": "FIFA",
-        "url": "https://d1211whpimeups.cloudfront.net/smil:rtbgo/chunklist.m3u8"
+        "url": "https://1nyaler.streamhostingcdn.top/stream/26/index.m3u8"
     },
     {
         "name": "DAZN FIFA",
         "logo": "https://i.postimg.cc/Kc3mP7Qt/cbimage.png",
         "group": "FIFA",
         "url": "https://1nyaler.streamhostingcdn.top/stream/94/index.m3u8"
+    },
+    {
+        "name": "DAZN 1",
+        "logo": "https://i.postimg.cc/Kc3mP7Qt/cbimage.png",
+        "group": "FIFA",
+        "url": "http://znty.dyndns.org:5010/hls/eleven1.m3u8"
     },
     {
         "name": "WORLD CUP TV (ENG)",
