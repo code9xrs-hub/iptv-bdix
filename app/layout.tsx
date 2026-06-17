@@ -4,6 +4,7 @@ import "./globals.css";
 import ClientPopupWrapper from "./components/ClientPopupWrapper";
 import Script from "next/script";
 import MobileNavBar from "./components/MobileNavBar";
+import TurnstileGuard from "./components/TurnstileGuard";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -94,13 +95,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col pb-24 md:pb-0">
-        {children}
-        <MobileNavBar />
-        <ClientPopupWrapper
-          showPopup={showPopup}
-          disableWcPopup={disableWcPopup}
-          disableTgPopup={disableTgPopup}
-        />
+        <TurnstileGuard>
+          {children}
+          <MobileNavBar />
+          <ClientPopupWrapper
+            showPopup={showPopup}
+            disableWcPopup={disableWcPopup}
+            disableTgPopup={disableTgPopup}
+          />
+        </TurnstileGuard>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-N36GM5VYZ7"
           strategy="afterInteractive"
