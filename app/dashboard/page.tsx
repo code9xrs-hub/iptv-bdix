@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/hooks/useAuth";
 import Image from "next/image";
-import Link from "next/link";
-import { Plus, Trash2, Tv, LogOut, Check, Loader2, Sparkles, RefreshCw, Link as LinkIcon, Database, Tag, List } from "lucide-react";
+import { Plus, Trash2, LogOut, Check, Loader2, Sparkles, RefreshCw, Link as LinkIcon, Database, Tag, List } from "lucide-react";
 import BackgroundScene from "../components/BackgroundScene";
+import Header from "../components/Header";
 
 interface SavedPlaylist {
   id: string;
@@ -239,41 +239,15 @@ export default function DashboardPage() {
   const user = session?.user;
 
   return (
-    <div className="min-h-screen bg-[#070414] text-white p-4 sm:p-8 relative overflow-hidden flex flex-col items-center">
+    <main className="relative min-h-screen text-white overflow-hidden pb-16">
       {/* Website's Main Background Scene */}
       <BackgroundScene />
 
-      <div className="w-full max-w-4xl z-10 flex flex-col gap-6 md:gap-8 flex-1">
-        {/* Header bar */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-5">
-          <Link href="/">
-            <div className="flex items-center gap-3 cursor-pointer group">
-              <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-white/15 group-hover:border-primary/40 shadow-lg bg-white/5 flex-shrink-0 transition-all">
-                <Image
-                  src="/logo.png"
-                  alt="IPTV Player Logo"
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform"
-                />
-              </div>
-              <div>
-                <h1 className="text-xl font-black tracking-tight leading-none">
-                  IP<span className="gradient-text">TV</span>
-                </h1>
-                <span className="text-[10px] text-zinc-500 tracking-wider font-bold">Player Portal</span>
-              </div>
-            </div>
-          </Link>
+      <div className="relative z-10">
+        <Header />
 
-          <Link href="/">
-            <button className="flex items-center gap-2 py-2.5 px-4 rounded-xl border border-white/10 hover:border-primary/30 bg-white/5 hover:bg-primary/10 text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer">
-              <Tv size={16} className="text-primary" />
-              <span>Watch Live TV</span>
-            </button>
-          </Link>
-        </div>
-
-        {/* User Card */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-8 sm:mt-12 flex flex-col gap-6 md:gap-8">
+          {/* User Card */}
         <div className="glass-card border border-white/10 rounded-3xl bg-white/[0.02] p-6 sm:p-8 shadow-xl backdrop-blur-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-primary/30 flex-shrink-0 shadow-lg">
@@ -521,6 +495,7 @@ export default function DashboardPage() {
 
         </div>
       </div>
-    </div>
+      </div>
+    </main>
   );
 }
