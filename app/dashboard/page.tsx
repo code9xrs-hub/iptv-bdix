@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/hooks/useAuth";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Trash2, Tv, LogOut, Check, Loader2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Tv, LogOut, Check, Loader2, Sparkles, RefreshCw, Link as LinkIcon, Database, Tag, List } from "lucide-react";
+import BackgroundScene from "../components/BackgroundScene";
 
 interface SavedPlaylist {
   id: string;
@@ -239,11 +240,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#070414] text-white p-4 sm:p-8 relative overflow-hidden flex flex-col items-center">
-      {/* Background decorations */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-primary/15 rounded-full blur-[120px] opacity-40 mix-blend-screen animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[150px] opacity-30 mix-blend-screen" />
-      </div>
+      {/* Website's Main Background Scene */}
+      <BackgroundScene />
 
       <div className="w-full max-w-4xl z-10 flex flex-col gap-6 md:gap-8 flex-1">
         {/* Header bar */}
@@ -262,7 +260,7 @@ export default function DashboardPage() {
                 <h1 className="text-xl font-black tracking-tight leading-none">
                   IP<span className="gradient-text">TV</span>
                 </h1>
-                <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Player Portal</span>
+                <span className="text-[10px] text-zinc-500 tracking-wider font-bold">Player Portal</span>
               </div>
             </div>
           </Link>
@@ -313,7 +311,7 @@ export default function DashboardPage() {
             <div className="glass-card border border-white/10 rounded-3xl bg-white/[0.02] p-6 sm:p-8 shadow-lg backdrop-blur-xl text-left flex flex-col flex-1">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-inner">
-                  <Plus size={20} />
+                  <Database size={20} />
                 </div>
                 <div>
                   <h3 className="font-black text-lg text-white">Add Playlist URL</h3>
@@ -323,7 +321,10 @@ export default function DashboardPage() {
 
               <form onSubmit={handleAddPlaylist} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Playlist Name</label>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-400 mb-1.5 ml-1">
+                    <Tag size={13} className="text-primary/70" />
+                    <span>Playlist name</span>
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. Bangladesh Live Channels"
@@ -336,7 +337,10 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1.5 ml-1">Playlist M3U/JSON URL</label>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-400 mb-1.5 ml-1">
+                    <LinkIcon size={13} className="text-primary/70" />
+                    <span>Playlist M3U/JSON URL</span>
+                  </label>
                   <input
                     type="url"
                     placeholder="https://example.com/playlist.m3u"
@@ -389,7 +393,15 @@ export default function DashboardPage() {
           <div className="lg:col-span-7 flex flex-col gap-6">
             <div className="glass-card border border-white/10 rounded-3xl bg-white/[0.02] p-6 sm:p-8 shadow-lg backdrop-blur-xl text-left flex flex-col flex-1">
               <div className="flex items-center justify-between mb-6 gap-2">
-                <h3 className="font-black text-lg text-white">Saved Playlists</h3>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-inner">
+                    <List size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-lg text-white">Saved Playlists</h3>
+                    <p className="text-xs text-zinc-400 mt-0.5">Manage and sync saved playlists</p>
+                  </div>
+                </div>
                 <button
                   onClick={handleSyncPlaylistData}
                   disabled={syncingPlaylists || playlists.length === 0}
@@ -397,12 +409,12 @@ export default function DashboardPage() {
                 >
                   {syncingPlaylists ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-primary" />
                       <span>Syncing...</span>
                     </>
                   ) : (
                     <>
-                      <Tv size={14} className="text-primary" />
+                      <RefreshCw size={14} className="text-primary hover:rotate-180 transition-transform duration-500" />
                       <span>Update Playlists Data</span>
                     </>
                   )}
@@ -432,9 +444,14 @@ export default function DashboardPage() {
                   <button onClick={fetchPlaylists} className="mt-3 text-xs text-primary font-bold hover:underline">Try Again</button>
                 </div>
               ) : playlists.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-zinc-500 text-sm min-h-[200px] border border-dashed border-white/10 rounded-2xl p-6 bg-white/[0.01] text-center">
-                  <p className="font-bold text-white mb-1">No saved playlists yet</p>
-                  <p className="text-xs text-zinc-400 max-w-xs">Add your first IPTV streaming link using the form on the left to sync it with your player.</p>
+                <div className="flex-1 flex flex-col items-center justify-center text-zinc-400 text-sm min-h-[260px] border border-dashed border-white/10 rounded-3xl p-6 bg-white/[0.01] text-center gap-3">
+                  <div className="p-3.5 rounded-full bg-white/5 border border-white/10 text-zinc-500 mb-1">
+                    <Database size={24} />
+                  </div>
+                  <p className="font-black text-white text-base">No saved playlists yet</p>
+                  <p className="text-xs text-zinc-400 max-w-xs leading-relaxed">
+                    Add your first IPTV streaming link using the form on the left to sync it with your player.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
@@ -445,14 +462,30 @@ export default function DashboardPage() {
                         playlist.isActive ? "border-white/10 hover:border-primary/30" : "border-white/5 opacity-60 hover:opacity-80"
                       }`}
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`h-2 w-2 rounded-full ${playlist.isActive ? "bg-emerald-500" : "bg-zinc-500"}`} />
-                          <h4 className="font-black text-sm text-white truncate">{playlist.name}</h4>
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        <div className={`p-3 rounded-2xl border flex-shrink-0 transition-colors ${
+                          playlist.isActive 
+                            ? "bg-primary/10 border-primary/20 text-primary shadow-inner" 
+                            : "bg-white/5 border-white/10 text-zinc-500"
+                        }`}>
+                          <LinkIcon size={18} />
                         </div>
-                        <p className="text-xs text-zinc-500 mt-1 truncate max-w-sm" title={playlist.url}>
-                          {playlist.url}
-                        </p>
+                        <div className="min-w-0 flex-1">
+                           <div className="flex items-center gap-2">
+                             <h4 className="font-black text-base text-white truncate">{playlist.name}</h4>
+                             <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-md ${
+                               playlist.isActive 
+                                 ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25" 
+                                 : "bg-zinc-500/15 text-zinc-400 border border-zinc-500/25"
+                             }`}>
+                               <span className={`w-1 h-1 rounded-full ${playlist.isActive ? "bg-emerald-400" : "bg-zinc-400"}`} />
+                               {playlist.isActive ? "Active" : "Inactive"}
+                             </span>
+                           </div>
+                           <p className="text-xs text-zinc-400 mt-1 truncate max-w-md font-medium" title={playlist.url}>
+                             {playlist.url}
+                           </p>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-3 flex-shrink-0">
