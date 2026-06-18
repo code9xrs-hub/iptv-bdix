@@ -78,7 +78,7 @@ export const PlaylistManagerView = React.memo(function PlaylistManagerView({
         <div className="flex-1 min-w-0 px-1 text-center sm:text-left">
           <h4 className="font-bold text-[13px] text-white">Need Playlist URLs?</h4>
           <p className="text-[11px] text-zinc-400 leading-tight mt-0.5">
-            Join Telegram or Discord for playlists. <span className="text-zinc-500">(Independent from this player)</span>
+            Join Telegram or Discord for playlists. <span className="text-zinc-500 hidden sm:inline">(Independent from this player)</span>
           </p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
@@ -86,7 +86,7 @@ export const PlaylistManagerView = React.memo(function PlaylistManagerView({
             href="https://discord.gg/TtWrw8W9B"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-1.5 px-3 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 border border-[#5865F2]/30 text-[#5865F2] hover:text-white text-[11px] font-bold rounded-lg transition-all shadow-sm active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 border border-[#5865F2]/30 text-[#5865F2] hover:text-white text-[11px] font-bold rounded-lg transition-all shadow-sm active:scale-95"
           >
             <FaDiscord size={14} />
             <span>Discord</span>
@@ -95,7 +95,7 @@ export const PlaylistManagerView = React.memo(function PlaylistManagerView({
             href="https://t.me/shajonOTT"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-1.5 px-3 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border border-[#0088cc]/30 text-[#0088cc] hover:text-white text-[11px] font-bold rounded-lg transition-all shadow-sm active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border border-[#0088cc]/30 text-[#0088cc] hover:text-white text-[11px] font-bold rounded-lg transition-all shadow-sm active:scale-95"
           >
             <FaTelegram size={14} />
             <span>Telegram</span>
@@ -120,13 +120,13 @@ export const PlaylistManagerView = React.memo(function PlaylistManagerView({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-3.5">
             <input
               type="text"
               placeholder="Playlist Name (e.g. My IPTV)"
               value={playlistName}
               onChange={(e) => setPlaylistName(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/10 focus-within:border-primary/50 focus-within:bg-white/[0.05] rounded-xl py-2 px-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-all"
+              className="w-full bg-white/[0.03] border border-white/10 focus-within:border-primary/50 focus-within:bg-white/[0.05] rounded-xl py-2.5 px-4 text-sm text-white placeholder:text-zinc-500 outline-none transition-all"
             />
             <input
               type="url"
@@ -134,13 +134,13 @@ export const PlaylistManagerView = React.memo(function PlaylistManagerView({
               value={importUrl}
               onChange={(e) => setImportUrl(e.target.value)}
               required
-              className="w-full bg-white/[0.03] border border-white/10 focus-within:border-primary/50 focus-within:bg-white/[0.05] rounded-xl py-2 px-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-all"
+              className="w-full bg-white/[0.03] border border-white/10 focus-within:border-primary/50 focus-within:bg-white/[0.05] rounded-xl py-2.5 px-4 text-sm text-white placeholder:text-zinc-500 outline-none transition-all"
             />
             
             <button
               type="submit"
               disabled={isImporting}
-              className="mt-1 w-full flex items-center justify-center gap-2 py-2 px-4 bg-primary hover:bg-primary/90 text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-primary/20 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
+              className="mt-1 w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary hover:bg-primary/90 text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-primary/20 disabled:opacity-50 active:scale-[0.98] cursor-pointer"
             >
               {isImporting ? (
                 <>
@@ -183,16 +183,16 @@ export const PlaylistManagerView = React.memo(function PlaylistManagerView({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-3.5">
             <input
               type="text"
               placeholder="Playlist Name (Optional)"
               value={uploadPlaylistName}
               onChange={(e) => setUploadPlaylistName(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/10 focus-within:border-primary/50 focus-within:bg-white/[0.05] rounded-xl py-2 px-3.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-all"
+              className="w-full bg-white/[0.03] border border-white/10 focus-within:border-primary/50 focus-within:bg-white/[0.05] rounded-xl py-2.5 px-4 text-sm text-white placeholder:text-zinc-500 outline-none transition-all"
             />
             
-            <div>
+            <div className="mt-1">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -202,7 +202,7 @@ export const PlaylistManagerView = React.memo(function PlaylistManagerView({
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20 text-sm font-black rounded-xl transition-all shadow-md active:scale-[0.98] cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20 text-sm font-black rounded-xl transition-all shadow-md active:scale-[0.98] cursor-pointer"
               >
                 <Upload size={14} />
                 <span>Choose M3U or JSON File</span>
