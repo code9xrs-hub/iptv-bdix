@@ -152,6 +152,7 @@ export const ChannelListView = React.memo(function ChannelListView({
                         alt={chan.name}
                         width={40}
                         height={40}
+                        unoptimized
                         onError={(e) => {
                           (e.currentTarget as HTMLElement).style.display = "none";
                         }}

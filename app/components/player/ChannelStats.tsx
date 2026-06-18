@@ -47,6 +47,7 @@ export const ChannelStats = React.memo(function ChannelStats({
                 alt={selectedChannel.name}
                 width={56}
                 height={56}
+                unoptimized
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = "none";
                 }}
@@ -192,6 +193,7 @@ export const ChannelStats = React.memo(function ChannelStats({
                     alt={selectedChannel.name}
                     width={40}
                     height={40}
+                    unoptimized
                     onError={(e) => {
                       (e.currentTarget as HTMLElement).style.display = "none";
                     }}
