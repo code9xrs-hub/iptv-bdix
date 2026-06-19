@@ -19,12 +19,11 @@ A modern, high-performance, and premium web-based IPTV player built with **Next.
 ## ✨ Features
 
 - 🎬 **Advanced Video Engine**: Seamless playback for HLS, DASH (with ClearKey DRM), and MPEG-TS streams using native and custom engines (`hls.js`, `shaka-player`, `mpegts.js`).
-- 🎛️ **Cinematic Player Experience**: Custom video quality selection with precise Mbps analytics, Picture-in-Picture (PiP), double-tap seek, and automatic 10-second error recovery channel switching.
+- 🎛️ **Cinematic Player Experience**: Custom video quality selection with precise Mbps analytics, Picture-in-Picture (PiP), and double-tap seek.
 - 🛡️ **Security & Proxy Routing**: Built-in secure proxy to bypass CORS and Geo-blocking with custom headers, protected by Anti-SSRF DNS validation and Cloudflare Turnstile Server Actions.
-- ⚡ **High-Performance Architecture**: Instant loading via SHA-256 IndexedDB channel caching, smart proxy bypass for direct streams, and live real-time watcher telemetry.
+- ⚡ **High-Performance Architecture**: Smart proxy bypass for direct streams.
 - ☁️ **Cloud Playlist Sync**: Built-in Google OAuth authentication with a PostgreSQL database to securely save and sync custom M3U/JSON playlists across all your devices.
 - ✨ **Premium Glassmorphic UI**: Responsive interactive channel grid, seamless skeleton loaders, sticky headers, knockout bracket cards, and a GPU-optimized 3D CSS cyber background.
-- 📂 **BDIX FTP Portal**: An elegant directory for local BDIX media servers featuring real-time online status and speed diagnostics.
 
 ---
 
@@ -34,7 +33,7 @@ A modern, high-performance, and premium web-based IPTV player built with **Next.
 - **Library**: [React 19](https://react.dev/)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
 - **Animations**: [Motion](https://motion.dev/)
-- **Authentication**: [NextAuth.js (Auth.js)](https://next-auth.js.org/) (Google Provider)
+- **Authentication**: Custom implementation using [Google Auth Library](https://github.com/googleapis/google-auth-library-nodejs)
 - **Database ORM**: [Prisma](https://www.prisma.io/) (PostgreSQL)
 - **Stream Engines**: [HLS.js](https://github.com/video-dev/hls.js/), [Shaka Player](https://github.com/shaka-project/shaka-player) (for DASH & ClearKey DRM), & [mpegts.js](https://github.com/xqq/mpegts.js) (for legacy MPEG-TS)
 - **HTTP Client**: [Undici](https://github.com/nodejs/undici) (for secure proxy streaming)
@@ -76,8 +75,7 @@ Ensure you have **Node.js** (**v22.19.0** or newer) installed.
 
    # Database & Authentication (For Cloud Sync)
    DATABASE_URL="postgresql://user:password@host:port/dbname?schema=public"
-   NEXTAUTH_URL=http://localhost:3000
-   NEXTAUTH_SECRET=your-random-secret
+   ROOT_DOMAIN=localhost
    GOOGLE_CLIENT_ID=your-google-client-id
    GOOGLE_CLIENT_SECRET=your-google-client-secret
    ```
