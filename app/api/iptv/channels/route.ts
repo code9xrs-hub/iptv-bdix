@@ -10,6 +10,7 @@ interface Channel {
   group: string;
   url: string;
   no_proxy?: boolean;
+  referer?: string;
 }
 
 interface PlaylistCache {
@@ -69,7 +70,7 @@ export function getChannelsWithHash(rawType: string = "universal") {
         // Add IDs if not present and deduplicate
         const channels = raw.map(
           (
-            ch: { name: string; logo: string; group: string; url: string; type?: string; kid?: string; key?: string; no_proxy?: boolean },
+            ch: { name: string; logo: string; group: string; url: string; type?: string; kid?: string; key?: string; no_proxy?: boolean; referer?: string },
             idx: number
           ) => ({
             id: `ch-${type}-${idx}`,
@@ -81,6 +82,7 @@ export function getChannelsWithHash(rawType: string = "universal") {
             ...(ch.kid && { kid: ch.kid }),
             ...(ch.key && { key: ch.key }),
             ...(ch.no_proxy !== undefined && { no_proxy: ch.no_proxy }),
+            ...(ch.referer && { referer: ch.referer }),
           })
         );
         
