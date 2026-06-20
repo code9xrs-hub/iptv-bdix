@@ -86,6 +86,37 @@ function resolveUrl(relative: string, base: string): string {
   }
 }
 
+/**
+ * Resolves a relative URL against a base, and if the relative URL has no
+ * query parameters of its own, carries over the raw query string from the
+ * base URL. This is essential for CDNs (e.g., Toffee) where auth tokens
+ * like `hdntl` are in the playlist URL's query string and must be forwarded
+ * to every segment (.ts) request exactly as-is (without re-encoding).
+ */
+function resolveUrlWithQuery(relative: string, base: string): string {
+  try {
+    const resolved = new URL(relative, base);
+    // Only propagate base query params for genuinely relative URLs
+    // (not absolute URLs that happen to have no query string)
+    const isAbsolute = /^https?:\/\//i.test(relative);
+    if (!isAbsolute && !relative.includes("?")) {
+      const baseUrl = new URL(base);
+      if (baseUrl.search) {
+        // Append the base's raw query string (without the leading ?)
+        const existingSearch = resolved.search ? resolved.search.substring(1) : "";
+        const baseSearch = baseUrl.search.substring(1);
+        if (existingSearch) {
+          return `${resolved.origin}${resolved.pathname}?${existingSearch}&${baseSearch}`;
+        }
+        return `${resolved.origin}${resolved.pathname}?${baseSearch}`;
+      }
+    }
+    return resolved.href;
+  } catch {
+    return relative;
+  }
+}
+
 function getBaseUrl(targetUrl: string): string {
   try {
     const urlObj = new URL(targetUrl);
@@ -237,13 +268,13 @@ export async function GET(request: NextRequest) {
             (match, qDouble, qSingle, unquoted) => {
               const uri = qDouble || qSingle || unquoted;
               if (!uri) return match;
-              const resolved = resolveUrl(uri, targetUrl);
+              const resolved = resolveUrlWithQuery(uri, targetUrl);
               return `URI="${proxyBaseUrl}?url=${encodeURIComponent(resolved)}${refererSuffix}"`;
             }
           );
         } else {
           // Rewrite the direct stream/segment URL line
-          const resolved = resolveUrl(trimmed, targetUrl);
+          const resolved = resolveUrlWithQuery(trimmed, targetUrl);
           return `${proxyBaseUrl}?url=${encodeURIComponent(resolved)}${refererSuffix}`;
         }
       });
