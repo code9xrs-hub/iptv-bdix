@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Tv, Radio, Upload, AlertCircle, ShieldAlert } from "lucide-react";
-import { FaGithub } from "react-icons/fa6";
+import { FaGithub, FaTelegram, FaDiscord } from "react-icons/fa6";
 
 // Hooks & Types
 import { useIPTVPlaylists, Channel } from "../hooks/useIPTVPlaylists";
@@ -310,18 +310,47 @@ export default function IPTVPlayer() {
             />
           </div>
 
-          {/* Notice Box Card */}
-          <div className="w-full flex items-start sm:items-center gap-3 p-3 sm:p-4 glass-card border border-amber-500/25 sm:border-amber-500/15 rounded-2xl md:rounded-3xl bg-white/[0.01] hover:bg-white/[0.03] transition-all duration-300">
-            <div className="p-1.5 sm:p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex-shrink-0 animate-pulse mt-0.5 sm:mt-0">
-              <AlertCircle size={16} className="sm:w-[18px] sm:h-[18px]" />
+          {/* Notice Cards */}
+          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            {/* Troubleshooting Tip */}
+            <div className="group relative glass-card border border-amber-500/15 rounded-2xl md:rounded-3xl bg-white/[0.01] overflow-hidden transition-all duration-300 hover:border-amber-500/25">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/[0.04] to-transparent pointer-events-none" />
+              <div className="relative p-4 sm:p-5 flex items-center gap-4">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-500/10 border border-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:bg-amber-500/15 group-hover:border-amber-500/30">
+                  <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm sm:text-base font-bold text-amber-400/80 tracking-widest mb-1">Troubleshooting</p>
+                  <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-medium">
+                    Encountering a blank or black screen? Click <span className="text-primary font-bold">Reload Stream</span> in the player controls or <span className="text-primary font-bold">Try Reconnecting</span>.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 text-xs sm:text-sm text-zinc-300 font-medium leading-relaxed select-text flex items-center gap-1.5">
-              <span className="text-amber-400 font-black whitespace-nowrap">Notice:</span>
-              <div className="flex flex-col gap-1">
-                <span>If you encounter a blank or black screen, please click the <span className="text-primary font-bold">Reload Stream</span> button in the player controls or <span className="text-primary font-bold">Try Reconnecting</span>.</span>
-                <span className="text-zinc-400 text-[11px] sm:text-xs">
-                  ⚠️ ওয়েবসাইটে বর্তমানে কোনো ডিফল্ট প্লেলিস্ট নেই। প্লেলিস্টের জন্য আমাদের <a href="https://t.me/shajonOTT" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">টেলিগ্রাম চ্যানেল</a> অথবা <a href="https://discord.gg/TtWrw8W9B" target="_blank" rel="noopener noreferrer" className="text-[#5865F2] hover:underline font-bold">ডিসকর্ড সার্ভারের</a> নির্দেশনা অনুসরণ করুন।
-                </span>
+
+            {/* Community & Playlist Guide */}
+            <div className="group relative glass-card border border-primary/15 rounded-2xl md:rounded-3xl bg-white/[0.01] overflow-hidden transition-all duration-300 hover:border-primary/25">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] to-transparent pointer-events-none" />
+              <div className="relative p-4 sm:p-5 flex items-center gap-4">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary/10 border border-primary/15 text-primary flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:bg-primary/15 group-hover:border-primary/30">
+                  <Tv className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm sm:text-base font-bold text-primary/80 tracking-widest mb-1">প্লেলিস্ট গাইড</p>
+                  <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed mb-2.5 font-medium">
+                    এই ওয়েবসাইটে কোনো ডিফল্ট প্লেলিস্ট প্রদান করা হয় না। প্লেলিস্ট পেতে আমাদের কমিউনিটিতে যোগ দিন।
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <a href="https://t.me/shajonOTT" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#2AABEE]/10 border border-[#2AABEE]/20 text-[#2AABEE] hover:bg-[#2AABEE]/20 hover:border-[#2AABEE]/30 hover:scale-[1.02] text-[11px] sm:text-xs font-bold transition-all duration-200">
+                      <FaTelegram size={14} />
+                      Telegram
+                    </a>
+                    <a href="https://discord.gg/TtWrw8W9B" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#5865F2]/10 border border-[#5865F2]/20 text-[#5865F2] hover:bg-[#5865F2]/20 hover:border-[#5865F2]/30 hover:scale-[1.02] text-[11px] sm:text-xs font-bold transition-all duration-200">
+                      <FaDiscord size={14} />
+                      Discord
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -352,24 +381,22 @@ export default function IPTVPlayer() {
                   <button
                     onClick={() => playlists.length > 0 && setPlaylistTab("browse")}
                     disabled={playlists.length === 0}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex-1 sm:flex-initial ${
-                      playlistTab === "browse"
-                        ? "bg-primary text-white shadow-lg shadow-primary/20"
-                        : playlists.length === 0
+                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex-1 sm:flex-initial ${playlistTab === "browse"
+                      ? "bg-primary text-white shadow-lg shadow-primary/20"
+                      : playlists.length === 0
                         ? "opacity-40 cursor-not-allowed text-zinc-500"
                         : "text-zinc-300 hover:text-white"
-                    }`}
+                      }`}
                   >
                     <Tv size={14} />
                     <span className="whitespace-nowrap">Browse Channels</span>
                   </button>
                   <button
                     onClick={() => setPlaylistTab("manage")}
-                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex-1 sm:flex-initial ${
-                      playlistTab === "manage"
-                        ? "bg-primary text-white shadow-lg shadow-primary/20"
-                        : "text-zinc-300 hover:text-white"
-                    }`}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex-1 sm:flex-initial ${playlistTab === "manage"
+                      ? "bg-primary text-white shadow-lg shadow-primary/20"
+                      : "text-zinc-300 hover:text-white"
+                      }`}
                   >
                     <Upload size={14} />
                     <span className="whitespace-nowrap">Playlists Manager</span>
