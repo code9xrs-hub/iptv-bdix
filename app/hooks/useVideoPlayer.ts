@@ -80,6 +80,10 @@ export function useVideoPlayer(
   const [availableQualities, setAvailableQualities] = useState<StreamQuality[]>([{ id: "auto", name: "Auto" }]);
   const [currentQuality, setCurrentQuality] = useState<number | "auto">("auto");
 
+  // Max Quality Mode — by default ON, prioritizes quality over latency
+  const [maxQualityMode, setMaxQualityMode] = useState(true);
+  const maxQualityModeRef = useRef(true);
+
   // Note: Viewer tracking has been moved to the global ViewerTracker component.
 
   useEffect(() => {
@@ -92,6 +96,10 @@ export function useVideoPlayer(
   useEffect(() => {
     volumeRef.current = volume;
   }, [volume]);
+
+  useEffect(() => {
+    maxQualityModeRef.current = maxQualityMode;
+  }, [maxQualityMode]);
 
   // YouTube-like Double Tap Seek State
   const [activeSeekIndicator, setActiveSeekIndicator] = useState<{
@@ -503,13 +511,28 @@ export function useVideoPlayer(
 
   const handleQualityChange = useCallback((qualityId: number | "auto") => {
     setCurrentQuality(qualityId);
+    const isMaxQ = maxQualityModeRef.current;
   
     if (shakaRef.current) {
       const player = shakaRef.current;
       if (qualityId === "auto") {
-        player.configure({ abr: { enabled: true } });
+        player.configure({
+          abr: { enabled: true },
+          streaming: {
+            rebufferingGoal: isMaxQ ? 5 : 2,
+            bufferingGoal: isMaxQ ? 60 : 25,
+            bufferBehind: isMaxQ ? 30 : 18,
+          },
+        });
       } else {
-        player.configure({ abr: { enabled: false } });
+        player.configure({
+          abr: { enabled: false },
+          streaming: {
+            rebufferingGoal: isMaxQ ? 8 : 3,
+            bufferingGoal: isMaxQ ? 90 : 40,
+            bufferBehind: isMaxQ ? 40 : 25,
+          },
+        });
         const tracks = player.getVariantTracks();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const selectedTrack = tracks.find((t: any) => t.id === qualityId);
@@ -521,8 +544,17 @@ export function useVideoPlayer(
       const hls = hlsRef.current;
       if (qualityId === "auto") {
         hls.currentLevel = -1;
+        if (isMaxQ) {
+          hls.config.maxBufferLength = 60;
+          hls.config.maxMaxBufferLength = 120;
+        }
       } else {
         hls.currentLevel = qualityId as number;
+        hls.nextLevel = qualityId as number;
+        if (isMaxQ) {
+          hls.config.maxBufferLength = 90;
+          hls.config.maxMaxBufferLength = 180;
+        }
       }
     }
     
@@ -606,6 +638,8 @@ export function useVideoPlayer(
 
       setTimeout(() => {
         if (loadedUrlRef.current !== chan.url) return;
+
+      const isMaxQuality = maxQualityModeRef.current;
 
       const attemptPlay = () => {
         video
@@ -691,7 +725,7 @@ export function useVideoPlayer(
 
             player.configure({
               manifest: {
-                defaultPresentationDelay: 10,
+                defaultPresentationDelay: isMaxQuality ? 15 : 10,
                 ignoreDrmInfo: true,
                 dash: {
                   ignoreMinBufferTime: true,
@@ -706,9 +740,9 @@ export function useVideoPlayer(
               streaming: {
                 lowLatencyMode: false,
                 inaccurateManifestTolerance: 3,
-                rebufferingGoal: 0.75,
-                bufferingGoal: 18,
-                bufferBehind: 18,
+                rebufferingGoal: isMaxQuality ? 5 : 0.75,
+                bufferingGoal: isMaxQuality ? 60 : 18,
+                bufferBehind: isMaxQuality ? 30 : 18,
                 gapDetectionThreshold: 0.4,
                 stallEnabled: true,
                 stallThreshold: 1.2,
@@ -722,13 +756,13 @@ export function useVideoPlayer(
               },
               abr: {
                 enabled: true,
-                defaultBandwidthEstimate: 12000000,
+                defaultBandwidthEstimate: isMaxQuality ? 15_000_000 : 12_000_000,
                 switchInterval: 2,
                 restrictToElementSize: false,
                 restrictToScreenSize: false,
                 clearBufferSwitch: false,
                 bandwidthDowngradeTarget: 0.95,
-                bandwidthUpgradeTarget: 0.68,
+                bandwidthUpgradeTarget: isMaxQuality ? 0.72 : 0.68,
                 useNetworkInformation: true,
               },
             });
@@ -859,8 +893,11 @@ export function useVideoPlayer(
               url: absoluteUrl,
             }, {
               enableWorker: true,
-              lazyLoadMaxDuration: 3 * 60,
+              lazyLoadMaxDuration: isMaxQuality ? 5 * 60 : 3 * 60,
               seekType: 'range',
+              stashInitialSize: isMaxQuality ? 1024 * 384 : undefined,
+              autoCleanupMinBackwardDuration: isMaxQuality ? 30 : undefined,
+              autoCleanupMaxBackwardDuration: isMaxQuality ? 60 : undefined,
             });
 
             mpegtsRef.current = player;
@@ -937,9 +974,29 @@ export function useVideoPlayer(
               if (Hls.isSupported()) {
                 const hls = new Hls({
                   enableWorker: true,
-                  lowLatencyMode: true,
-                  backBufferLength: 0,
+                  lowLatencyMode: !isMaxQuality,
                   startLevel: -1,
+                  // Buffer Optimization — aggressive pre-buffering
+                  maxBufferLength: isMaxQuality ? 60 : 15,
+                  maxMaxBufferLength: isMaxQuality ? 120 : 30,
+                  maxBufferSize: isMaxQuality ? 120 * 1000 * 1000 : 30 * 1000 * 1000,
+                  maxBufferHole: 0.5,
+                  backBufferLength: isMaxQuality ? 30 : 0,
+                  // Live Stream Latency — play 15-20s behind live edge to prevent buffering
+                  liveSyncDurationCount: isMaxQuality ? 5 : 3,
+                  liveMaxLatencyDurationCount: isMaxQuality ? 10 : 6,
+                  // ABR Tuning
+                  abrEwmaDefaultEstimate: isMaxQuality ? 5_000_000 : 500_000,
+                  abrEwmaDefaultEstimateMax: isMaxQuality ? 50_000_000 : 5_000_000,
+                  abrBandWidthFactor: isMaxQuality ? 0.90 : 0.95,
+                  abrBandWidthUpFactor: isMaxQuality ? 0.85 : 0.70,
+                  abrMaxWithRealBitrate: true,
+                  // Network Retry
+                  fragLoadingMaxRetry: 6,
+                  manifestLoadingMaxRetry: 4,
+                  levelLoadingMaxRetry: 4,
+                  fragLoadingTimeOut: 20000,
+                  fragLoadingMaxRetryTimeout: 32000,
                 });
                 hlsRef.current = hls;
 
@@ -1020,9 +1077,29 @@ export function useVideoPlayer(
             if (Hls.isSupported()) {
               const hls = new Hls({
                 enableWorker: true,
-                lowLatencyMode: true,
-                backBufferLength: 0,
+                lowLatencyMode: !isMaxQuality,
                 startLevel: -1,
+                // Buffer Optimization — aggressive pre-buffering
+                maxBufferLength: isMaxQuality ? 60 : 15,
+                maxMaxBufferLength: isMaxQuality ? 120 : 30,
+                maxBufferSize: isMaxQuality ? 120 * 1000 * 1000 : 30 * 1000 * 1000,
+                maxBufferHole: 0.5,
+                backBufferLength: isMaxQuality ? 30 : 0,
+                // Live Stream Latency — play 15-20s behind live edge to prevent buffering
+                liveSyncDurationCount: isMaxQuality ? 5 : 3,
+                liveMaxLatencyDurationCount: isMaxQuality ? 10 : 6,
+                // ABR Tuning
+                abrEwmaDefaultEstimate: isMaxQuality ? 5_000_000 : 500_000,
+                abrEwmaDefaultEstimateMax: isMaxQuality ? 50_000_000 : 5_000_000,
+                abrBandWidthFactor: isMaxQuality ? 0.90 : 0.95,
+                abrBandWidthUpFactor: isMaxQuality ? 0.85 : 0.70,
+                abrMaxWithRealBitrate: true,
+                // Network Retry
+                fragLoadingMaxRetry: 6,
+                manifestLoadingMaxRetry: 4,
+                levelLoadingMaxRetry: 4,
+                fragLoadingTimeOut: 20000,
+                fragLoadingMaxRetryTimeout: 32000,
               });
               hlsRef.current = hls;
 
@@ -1269,6 +1346,17 @@ export function useVideoPlayer(
     };
   }, []);
 
+  const handleToggleMaxQuality = useCallback(() => {
+    setMaxQualityMode(prev => {
+      const next = !prev;
+      maxQualityModeRef.current = next;
+      return next;
+    });
+    // Re-initialize stream with new settings
+    loadedUrlRef.current = null;
+    setRetryKey(prev => prev + 1);
+  }, [setRetryKey]);
+
   const handleReload = () => {
     loadedUrlRef.current = null;
     setRetryKey((prev) => prev + 1);
@@ -1293,7 +1381,9 @@ export function useVideoPlayer(
     isPipSupported,
     availableQualities,
     currentQuality,
+    maxQualityMode,
     handleQualityChange,
+    handleToggleMaxQuality,
     handlePlayPause,
     handleMuteUnmute,
     handleVolumeChangeSlider,
