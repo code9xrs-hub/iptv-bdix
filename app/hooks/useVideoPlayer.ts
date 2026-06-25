@@ -57,6 +57,8 @@ export interface StreamQuality {
   bandwidth?: number;
 }
 
+export type PlayerEngine = "auto" | "hls.js" | "shaka" | "video.js";
+
 export function useVideoPlayer(
   selectedChannel: Channel | null,
   retryKey: number,
@@ -65,6 +67,11 @@ export function useVideoPlayer(
 ) {
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [isBuffering, setIsBuffering] = useState(false);
+  const [playerEngine, setPlayerEngineState] = useState<PlayerEngine>("auto");
+  const setPlayerEngine = useCallback((engine: PlayerEngine) => {
+    setPlayerEngineState(engine);
+    setRetryKey(prev => prev + 1);
+  }, [setRetryKey]);
 
   const [playerStatus, setPlayerStatus] = useState<
     "idle" | "loading" | "playing" | "error"
@@ -88,6 +95,8 @@ export function useVideoPlayer(
 
   const hlsRef = useRef<Hls | null>(null);
   const shakaRef = useRef<ShakaPlayer | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const videojsRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mpegtsRef = useRef<any>(null);
   const userMutedRef = useRef(false);
@@ -636,6 +645,15 @@ export function useVideoPlayer(
         shakaRef.current = null;
       }
 
+      if (videojsRef.current) {
+        try {
+          // Do not call dispose() because it destroys the video element
+          videojsRef.current.pause();
+          videojsRef.current.removeAttribute('src');
+          videojsRef.current.load();
+        } catch { /* ignore */ }
+      }
+
       if (mpegtsRef.current) {
         mpegtsRef.current.destroy();
         mpegtsRef.current = null;
@@ -777,7 +795,95 @@ export function useVideoPlayer(
           const isHls = chan.type === "hls" || cleanChanUrlStr.endsWith(".m3u8") || cleanChanUrlStr.endsWith(".m3u");
           const isTs = !isDash && !isHls && (cleanChanUrlStr.endsWith(".ts") || chan.type === "ts");
 
-          if (isDash) {
+          const forceEngine = playerEngine;
+          const useShaka = forceEngine === "shaka" || (forceEngine === "auto" && isDash);
+          const useVideoJs = forceEngine === "video.js";
+          const useTs = forceEngine === "auto" && isTs;
+
+          if (useVideoJs) {
+            (async () => {
+              try {
+                const videojsModule = await import("video.js");
+                const videojs = videojsModule.default || videojsModule;
+                await import("video.js/dist/video-js.css");
+
+                if (loadedUrlRef.current !== initialChan.url) return;
+
+                const playableUrl = getPlayableUrl(chan.url, chan.useProxy, chan.referer);
+                
+                // Initialize video.js on the videoRef
+                const player = videojs(video, {
+                  controls: false,
+                  autoplay: true,
+                  preload: "auto",
+                  html5: {
+                    hls: { overrideNative: !getIsIOS() },
+                    vhs: {
+                      overrideNative: !getIsIOS(),
+                      enableLowInitialPlaylist: true,
+                      fastQualityChange: true,
+                    }
+                  }
+                });
+                
+                videojsRef.current = player;
+                player.src({ src: playableUrl, type: isDash ? 'application/dash+xml' : 'application/x-mpegURL' });
+                
+                player.on('error', () => {
+                  const err = player.error();
+                  console.error("[VIDEO.JS] Error:", err);
+                  setPlayerError(`Video.js stream error: ${err?.message || 'Unknown error'}`);
+                  setPlayerStatus("error");
+                });
+
+                player.on('loadedmetadata', () => {
+                   // Extract qualities from VHS
+                   try {
+                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                     const vhs = (player.tech() as any)?.vhs;
+                     if (vhs && vhs.playlists && vhs.playlists.master) {
+                       const playlists = vhs.playlists.master.playlists;
+                       if (playlists) {
+                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                         const extractedQualities = playlists.map((l: any, i: number) => {
+                           const height = l.attributes?.RESOLUTION?.height;
+                           const bandwidth = l.attributes?.BANDWIDTH;
+                           return {
+                             id: i,
+                             name: height ? `${height}p` : `${Math.round(bandwidth / 1000)} kbps`,
+                             height: height,
+                             bandwidth: bandwidth
+                           };
+                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                         }).filter((q: any) => q.height > 0)
+                           // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                           .sort((a: any, b: any) => {
+                             if (b.height !== a.height) return b.height - a.height;
+                             return b.bandwidth - a.bandwidth;
+                           });
+                         if (extractedQualities.length > 0) {
+                           setAvailableQualities([{ id: "auto", name: "Auto" }, ...extractedQualities]);
+                         }
+                       }
+                     }
+                   } catch (e) {
+                     console.warn("Failed to extract Video.js qualities", e);
+                   }
+                });
+
+                player.on('playing', () => {
+                  setPlayerStatus("playing");
+                  setIsPaused(false);
+                });
+
+                attemptPlay();
+              } catch (err) {
+                console.error("Failed to load video.js", err);
+                setPlayerError("Failed to load Video.js module.");
+                setPlayerStatus("error");
+              }
+            })();
+          } else if (useShaka) {
             (async () => {
 
 
@@ -988,7 +1094,7 @@ export function useVideoPlayer(
 
               loadShakaPlayer(chan);
             })();
-          } else if (isTs) {
+          } else if (useTs) {
             (async () => {
               try {
                 const mpegtsModule = await import("mpegts.js");
@@ -1457,7 +1563,7 @@ export function useVideoPlayer(
         })();
       }, 50);
     },
-    [setupUnmuteOnInteraction]
+    [setupUnmuteOnInteraction, playerEngine]
   );
 
   // Auto-play / load stream when selectedChannel or retryKey changes
@@ -1554,5 +1660,7 @@ export function useVideoPlayer(
     handleReload,
     handleMouseMove,
     initializeStream,
+    playerEngine,
+    setPlayerEngine,
   };
 }

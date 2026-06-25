@@ -90,6 +90,8 @@ export default function IPTVPlayer() {
     handleReload,
     handleMouseMove,
     initializeStream,
+    playerEngine,
+    setPlayerEngine,
   } = useVideoPlayer(selectedChannel, retryKey, setRetryKey, () => {
     setChannels((currentChannels) => {
       if (currentChannels.length <= 1) return currentChannels;
@@ -283,6 +285,8 @@ export default function IPTVPlayer() {
               handleMouseMove={handleMouseMove}
               maxQualityMode={maxQualityMode}
               handleToggleMaxQuality={handleToggleMaxQuality}
+              playerEngine={playerEngine}
+              setPlayerEngine={setPlayerEngine}
             />
           </div>
 
