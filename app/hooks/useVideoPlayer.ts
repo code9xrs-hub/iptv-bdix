@@ -971,13 +971,13 @@ export function useVideoPlayer(
                     },
                     abr: {
                       enabled: true,
-                      defaultBandwidthEstimate: 2_500_000, // Start lower for instant initial playback, then ramp up via ABR
+                      defaultBandwidthEstimate: 5_000_000, // Start moderate for instant initial playback, then ramp up via ABR
                       switchInterval: 2,
                       restrictToElementSize: false,
                       restrictToScreenSize: false,
                       clearBufferSwitch: false,
                       bandwidthDowngradeTarget: 0.85,
-                      bandwidthUpgradeTarget: 0.70, // More conservative target to prevent quality oscillations
+                      bandwidthUpgradeTarget: 0.75, // Target to allow scaling to 4K easily
                       useNetworkInformation: true,
                     },
                   });
@@ -1357,10 +1357,11 @@ export function useVideoPlayer(
                     liveMaxLatencyDurationCount: isMaxQuality ? 15 : 10,
                     // ABR Tuning
                     abrEwmaDefaultEstimate: 500_000, // 500kbps initial estimate to force lightweight first fragment
-                    abrEwmaDefaultEstimateMax: isMaxQuality ? 50_000_000 : 10_000_000,
-                    abrBandWidthFactor: isMaxQuality ? 0.80 : 0.75,
-                    abrBandWidthUpFactor: 0.65,
+                    abrEwmaDefaultEstimateMax: 50_000_000, // 50 Mbps max estimate to allow 4K scaling
+                    abrBandWidthFactor: isMaxQuality ? 0.85 : 0.80,
+                    abrBandWidthUpFactor: 0.70,
                     abrMaxWithRealBitrate: true,
+                    capLevelToPlayerSize: false, // Ensure we don't cap resolution to the CSS player size
                     // Network Retry
                     fragLoadingMaxRetry: 8,
                     manifestLoadingMaxRetry: 4,
