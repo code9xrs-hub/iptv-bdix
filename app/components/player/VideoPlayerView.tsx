@@ -55,6 +55,7 @@ interface VideoPlayerViewProps {
   isPipSupported: boolean;
   availableQualities: StreamQuality[];
   currentQuality: number | "auto";
+  activeAutoQualityId: number | null;
   handleQualityChange: (qualityId: number | "auto") => void;
   handlePlayPause: () => void;
   handleMuteUnmute: () => void;
@@ -139,6 +140,7 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
   isPipSupported,
   availableQualities,
   currentQuality,
+  activeAutoQualityId,
   handleQualityChange,
   handlePlayPause,
   handleMuteUnmute,
@@ -402,7 +404,23 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                   title="Quality"
                 >
                   <span className="text-[13px] sm:text-[15px] font-medium tracking-wide drop-shadow-md flex items-baseline gap-0.5">
-                    {currentQuality === 'auto' ? 'Auto' : (() => {
+                    {currentQuality === 'auto' ? (
+                      activeAutoQualityId !== null ? (() => {
+                        const q = availableQualities.find(q => q.id === activeAutoQualityId);
+                        if (!q) return 'Auto';
+                        return (
+                          <>
+                            <span>{q.name}</span>
+                            {q.height && q.height >= 2160 && (
+                              <sup className="text-[9px] font-black text-rose-500 select-none">4K</sup>
+                            )}
+                            {q.height && q.height >= 1080 && q.height < 2160 && (
+                              <sup className="text-[9px] font-black text-rose-500 select-none">HD</sup>
+                            )}
+                          </>
+                        );
+                      })() : 'Auto'
+                    ) : (() => {
                       const q = availableQualities.find(q => q.id === currentQuality);
                       if (!q) return 'Auto';
                       return (
@@ -448,11 +466,10 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                                 handleQualityChange(q.id);
                                 setShowSettings(false);
                               }}
-                              className={`w-full flex items-center justify-start px-3 py-2 text-sm transition-colors ${
-                                isActive
+                              className={`w-full flex items-center justify-start px-3 py-2 text-sm transition-colors ${isActive
                                   ? "bg-white/[0.06] text-white font-bold border-l-2 border-primary"
                                   : "text-zinc-300 hover:bg-white/[0.04] hover:text-white border-l-2 border-transparent"
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center justify-center w-6 mr-1.5 shrink-0">
                                 {isActive ? (
@@ -476,7 +493,7 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                                   )}
                                 </span>
                                 {q.bandwidth && (
-                                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/5 text-[10px] text-zinc-400 font-medium select-none ml-auto">
+                                  <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/5 text-[10px] text-zinc-400 font-medium select-none ml-auto whitespace-nowrap shrink-0">
                                     <Wifi size={10} className="text-zinc-500" />
                                     <span>{formatBandwidth(q.bandwidth)}</span>
                                   </span>
@@ -496,11 +513,10 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                                   handleQualityChange('auto');
                                   setShowSettings(false);
                                 }}
-                                className={`w-full flex items-center justify-start px-3 py-2.5 text-sm transition-colors ${
-                                  isActive
+                                className={`w-full flex items-center justify-start px-3 py-2.5 text-sm transition-colors ${isActive
                                     ? "bg-white/[0.06] text-white font-bold border-l-2 border-primary"
                                     : "text-zinc-200 hover:bg-white/10 hover:text-white border-l-2 border-transparent"
-                                }`}
+                                  }`}
                               >
                                 <div className="flex items-center justify-center w-6 mr-1.5 shrink-0">
                                   {isActive ? (
@@ -509,7 +525,14 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                                     <Sparkles size={14} className="text-zinc-500" />
                                   )}
                                 </div>
-                                <span className="flex items-center text-[13px]">Auto</span>
+                                <span className="flex items-center text-[13px]">
+                                  Auto
+                                  {isActive && activeAutoQualityId !== null && (() => {
+                                    const q = availableQualities.find(q => q.id === activeAutoQualityId);
+                                    if (!q) return null;
+                                    return <span className="ml-1 text-white/50">• {q.name}</span>;
+                                  })()}
+                                </span>
                               </button>
                             </div>
                           );
@@ -545,11 +568,10 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                                   e.stopPropagation();
                                   setPlayerEngine(engine);
                                 }}
-                                className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                  playerEngine === engine
+                                className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${playerEngine === engine
                                     ? 'bg-primary/20 text-primary border border-primary/30'
                                     : 'bg-white/5 text-zinc-300 hover:bg-white/10 border border-transparent'
-                                }`}
+                                  }`}
                               >
                                 {engine === 'auto' ? 'Auto' : engine === 'hls.js' ? 'HLS.js' : engine === 'shaka' ? 'Shaka' : 'Video.js'}
                               </button>
@@ -628,11 +650,10 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                             handleQualityChange(q.id);
                             setShowSettings(false);
                           }}
-                          className={`w-full flex items-center justify-start px-3 py-3 text-sm rounded-2xl transition-all duration-200 cursor-pointer ${
-                            isActive
+                          className={`w-full flex items-center justify-start px-3 py-3 text-sm rounded-2xl transition-all duration-200 cursor-pointer ${isActive
                               ? "bg-white/[0.06] text-white font-bold border-l-2 border-primary"
                               : "text-zinc-300 active:bg-white/[0.04] border-l-2 border-transparent"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-center w-5 mr-3 shrink-0">
                             {isActive ? (
@@ -655,7 +676,7 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                               )}
                             </span>
                             {q.bandwidth && (
-                              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/5 text-[10px] text-zinc-400 font-medium select-none ml-auto">
+                              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/5 text-[10px] text-zinc-400 font-medium select-none ml-auto whitespace-nowrap shrink-0">
                                 <Wifi size={10} className="text-zinc-500" />
                                 <span>{formatBandwidth(q.bandwidth)}</span>
                               </span>
@@ -675,11 +696,10 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                               handleQualityChange('auto');
                               setShowSettings(false);
                             }}
-                            className={`w-full flex items-center justify-start px-3 py-3 text-sm rounded-2xl transition-all duration-200 cursor-pointer ${
-                              isActive
+                            className={`w-full flex items-center justify-start px-3 py-3 text-sm rounded-2xl transition-all duration-200 cursor-pointer ${isActive
                                 ? "bg-white/[0.06] text-white font-bold border-l-2 border-primary"
                                 : "text-zinc-300 active:bg-white/[0.04] border-l-2 border-transparent"
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center justify-center w-5 mr-3 shrink-0">
                               {isActive ? (
@@ -688,7 +708,14 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                                 <Sparkles size={16} className="text-zinc-500" />
                               )}
                             </div>
-                            <span className="text-[14px]">Auto</span>
+                            <span className="text-[14px] flex items-center">
+                              Auto
+                              {isActive && activeAutoQualityId !== null && (() => {
+                                const q = availableQualities.find(q => q.id === activeAutoQualityId);
+                                if (!q) return null;
+                                return <span className="ml-1.5 text-white/50 text-[12px]">• {q.name}</span>;
+                              })()}
+                            </span>
                           </button>
                         </div>
                       );
@@ -725,11 +752,10 @@ export const VideoPlayerView = React.memo(function VideoPlayerView({
                               setPlayerEngine(engine);
                               setShowSettings(false);
                             }}
-                            className={`px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all ${
-                              playerEngine === engine
+                            className={`px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all ${playerEngine === engine
                                 ? 'bg-primary/20 text-primary border border-primary/30'
                                 : 'bg-white/5 text-zinc-300 active:bg-white/10 border border-transparent'
-                            }`}
+                              }`}
                           >
                             {engine === 'auto' ? 'Auto' : engine === 'hls.js' ? 'HLS.js' : engine === 'shaka' ? 'Shaka' : 'Video.js'}
                           </button>
