@@ -8,6 +8,14 @@ import { Channel, getIsIOS } from "./useIPTVPlaylists";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ShakaPlayer = any;
 
+export interface TrendingChannel {
+  name: string;
+  logo: string;
+  url: string;
+  group: string;
+  viewers: number;
+}
+
 const getPlayableUrl = (url: string, useProxy?: boolean, referer?: string) => {
   if (useProxy && url && (url.startsWith("http://") || url.startsWith("https://"))) {
     let proxyUrl = `/api/iptv/proxy?url=${encodeURIComponent(url)}`;
@@ -107,6 +115,7 @@ export function useVideoPlayer(
   const nativeErrorCleanupRef = useRef<(() => void) | null>(null);
   const lastRetryKeyRef = useRef(retryKey);
   const [viewerCount, setViewerCount] = useState<number | null>(null);
+  const [topChannels, setTopChannels] = useState<TrendingChannel[]>([]);
 
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fallbackAttemptRef = useRef(0);
@@ -121,8 +130,11 @@ export function useVideoPlayer(
   // Listen for global viewer count updates from ViewerTracker
   useEffect(() => {
     const handleViewerCount = (e: Event) => {
-      const customEvent = e as CustomEvent<{ count: number }>;
+      const customEvent = e as CustomEvent<{ count: number; topChannels?: TrendingChannel[] }>;
       setViewerCount(customEvent.detail.count);
+      if (customEvent.detail.topChannels) {
+        setTopChannels(customEvent.detail.topChannels);
+      }
     };
     window.addEventListener("iptv-viewer-count", handleViewerCount);
     return () => window.removeEventListener("iptv-viewer-count", handleViewerCount);
@@ -1675,6 +1687,7 @@ export function useVideoPlayer(
     showControls,
     activeSeekIndicator,
     viewerCount,
+    topChannels,
     isPipSupported,
     availableQualities,
     currentQuality,
