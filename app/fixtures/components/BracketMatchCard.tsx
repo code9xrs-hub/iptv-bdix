@@ -20,8 +20,8 @@ export const BracketMatchCard = ({
   if (!match) return <div className="w-[210px] p-3 border border-dashed border-white/20 rounded-xl bg-[#0c0824]/80 backdrop-blur-md text-xs font-semibold text-center text-zinc-400">Match {matchNum} Pending</div>;
 
   const hasPlayed = !!match.score;
-  const score1 = hasPlayed ? match.score?.ft[0] : "-";
-  const score2 = hasPlayed ? match.score?.ft[1] : "-";
+  const score1 = hasPlayed ? (match.score?.et ? match.score.et[0] : match.score?.ft[0]) : "-";
+  const score2 = hasPlayed ? (match.score?.et ? match.score.et[1] : match.score?.ft[1]) : "-";
 
   const displayTeam1 = resolveTeamName(match.team1, allMatches, standings);
   const displayTeam2 = resolveTeamName(match.team2, allMatches, standings);
@@ -42,9 +42,14 @@ export const BracketMatchCard = ({
             <TeamFlag teamName={displayTeam1} className="w-5 h-3.5 flex-shrink-0" />
             <span className="truncate max-w-[120px]">{displayTeam1}</span>
           </div>
-          <span className={`font-black px-1.5 py-0.5 rounded-sm bg-white/[0.08] ${hasPlayed && isWinner(match, 1) ? "text-emerald-400" : "text-zinc-200"}`}>
-            {score1}
-          </span>
+          <div className="flex items-center gap-1.5">
+            {hasPlayed && match.score?.p && (
+              <span className="text-[10px] text-zinc-400 font-bold">({match.score.p[0]})</span>
+            )}
+            <span className={`font-black px-1.5 py-0.5 rounded-sm bg-white/[0.08] ${hasPlayed && isWinner(match, 1) ? "text-emerald-400" : "text-zinc-200"}`}>
+              {score1}
+            </span>
+          </div>
         </div>
 
         {/* Team 2 */}
@@ -53,9 +58,14 @@ export const BracketMatchCard = ({
             <TeamFlag teamName={displayTeam2} className="w-5 h-3.5 flex-shrink-0" />
             <span className="truncate max-w-[120px]">{displayTeam2}</span>
           </div>
-          <span className={`font-black px-1.5 py-0.5 rounded-sm bg-white/[0.08] ${hasPlayed && isWinner(match, 2) ? "text-emerald-400" : "text-zinc-200"}`}>
-            {score2}
-          </span>
+          <div className="flex items-center gap-1.5">
+            {hasPlayed && match.score?.p && (
+              <span className="text-[10px] text-zinc-400 font-bold">({match.score.p[1]})</span>
+            )}
+            <span className={`font-black px-1.5 py-0.5 rounded-sm bg-white/[0.08] ${hasPlayed && isWinner(match, 2) ? "text-emerald-400" : "text-zinc-200"}`}>
+              {score2}
+            </span>
+          </div>
         </div>
       </div>
 
