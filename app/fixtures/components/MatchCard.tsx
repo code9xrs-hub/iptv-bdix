@@ -14,8 +14,8 @@ interface MatchCardProps {
 
 export const MatchCard = ({ match, idx, isToday = false }: MatchCardProps) => {
   const hasPlayed = !!match.score;
-  const score1 = hasPlayed ? match.score?.ft[0] : "-";
-  const score2 = hasPlayed ? match.score?.ft[1] : "-";
+  const score1 = hasPlayed ? (match.score?.et ? match.score.et[0] : match.score?.ft[0]) : "-";
+  const score2 = hasPlayed ? (match.score?.et ? match.score.et[1] : match.score?.ft[1]) : "-";
 
   const [timeStatus, setTimeStatus] = useState<{
     label: string;
@@ -156,15 +156,20 @@ export const MatchCard = ({ match, idx, isToday = false }: MatchCardProps) => {
                 </div>
               )}
             </div>
-            <span className={`w-9 h-9 rounded-lg flex items-center justify-center border font-black text-sm sm:text-base flex-shrink-0 transition-all duration-300 ${
-              hasPlayed
-                ? (isWinner(match, 1) ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-white/10 bg-white/[0.02] text-zinc-400")
-                : "border-white/5 bg-white/[0.01] text-zinc-600"
-            }`}>
-              {score1}
-            </span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {hasPlayed && match.score?.p && (
+                <span className="text-xs font-bold text-zinc-400">({match.score.p[0]})</span>
+              )}
+              <span className={`w-9 h-9 rounded-lg flex items-center justify-center border font-black text-sm sm:text-base transition-all duration-300 ${
+                hasPlayed
+                  ? (isWinner(match, 1) ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-white/10 bg-white/[0.02] text-zinc-400")
+                  : "border-white/5 bg-white/[0.01] text-zinc-600"
+              }`}>
+                {score1}
+              </span>
+            </div>
           </div>
-
+ 
           {/* Team 2 Row */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col gap-1 min-w-0">
@@ -186,13 +191,18 @@ export const MatchCard = ({ match, idx, isToday = false }: MatchCardProps) => {
                 </div>
               )}
             </div>
-            <span className={`w-9 h-9 rounded-lg flex items-center justify-center border font-black text-sm sm:text-base flex-shrink-0 transition-all duration-300 ${
-              hasPlayed
-                ? (isWinner(match, 2) ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-white/10 bg-white/[0.02] text-zinc-400")
-                : "border-white/5 bg-white/[0.01] text-zinc-600"
-            }`}>
-              {score2}
-            </span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {hasPlayed && match.score?.p && (
+                <span className="text-xs font-bold text-zinc-400">({match.score.p[1]})</span>
+              )}
+              <span className={`w-9 h-9 rounded-lg flex items-center justify-center border font-black text-sm sm:text-base transition-all duration-300 ${
+                hasPlayed
+                  ? (isWinner(match, 2) ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-white/10 bg-white/[0.02] text-zinc-400")
+                  : "border-white/5 bg-white/[0.01] text-zinc-600"
+              }`}>
+                {score2}
+              </span>
+            </div>
           </div>
         </div>
 
