@@ -1264,11 +1264,11 @@ export function useVideoPlayer(
                       fragLoadingMaxRetry: 8,
                       manifestLoadingMaxRetry: 4,
                       levelLoadingMaxRetry: 4,
-                      // Reduce timeouts to fail fast and retry quickly during transient glitches
-                      fragLoadingTimeOut: 6000,
-                      manifestLoadingTimeOut: 10000,
-                      levelLoadingTimeOut: 10000,
-                      fragLoadingMaxRetryTimeout: 16000,
+                      // Reasonable timeouts for slow connections and proxy paths
+                      fragLoadingTimeOut: 20000,
+                      manifestLoadingTimeOut: 20000,
+                      levelLoadingTimeOut: 20000,
+                      fragLoadingMaxRetryTimeout: 35000,
                     });
                     hlsRef.current = hls;
 
@@ -1425,11 +1425,11 @@ export function useVideoPlayer(
                     fragLoadingMaxRetry: 8,
                     manifestLoadingMaxRetry: 4,
                     levelLoadingMaxRetry: 4,
-                    // Reduce timeouts to fail fast and retry quickly during transient glitches
-                    fragLoadingTimeOut: 6000,
-                    manifestLoadingTimeOut: 10000,
-                    levelLoadingTimeOut: 10000,
-                    fragLoadingMaxRetryTimeout: 16000,
+                    // Reasonable timeouts for slow connections and proxy paths
+                    fragLoadingTimeOut: 20000,
+                    manifestLoadingTimeOut: 20000,
+                    levelLoadingTimeOut: 20000,
+                    fragLoadingMaxRetryTimeout: 35000,
                   });
                   hlsRef.current = hls;
 

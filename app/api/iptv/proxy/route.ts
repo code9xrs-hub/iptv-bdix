@@ -82,6 +82,13 @@ async function isValidTargetUrl(urlStr: string): Promise<boolean> {
   }
 }
 
+// Create standard and ssl optimized connection pooling agents for Undici.
+const standardAgent = new Agent({
+  keepAliveTimeout: 15000,
+  keepAliveMaxTimeout: 30000,
+  connections: 200,
+});
+
 // Create a custom Undici Agent to handle legacy IPTV servers
 // that use older TLS versions or legacy cipher suites, optimized with Keep-Alive connection pooling.
 const sslAgent = new Agent({
@@ -238,6 +245,7 @@ export async function GET(request: NextRequest) {
           headers: upstreamHeaders,
           signal: controller.signal,
           redirect: "manual",
+          dispatcher: standardAgent,
         });
       } catch (err: unknown) {
         const errMsg = err instanceof Error ? err.message : String(err);
@@ -435,6 +443,7 @@ export async function GET(request: NextRequest) {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Range",
         "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges",
+        "X-Accel-Buffering": "no",
       };
 
       // Forward critical response headers from upstream
