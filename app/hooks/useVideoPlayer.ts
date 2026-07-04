@@ -98,7 +98,13 @@ export function useVideoPlayer(
   setRetryKey: React.Dispatch<React.SetStateAction<number>>,
   onChannelFail?: () => void
 ) {
-  const [playerError, setPlayerError] = useState<string | null>(null);
+  const [playerError, setPlayerErrorState] = useState<string | null>(null);
+  const latestErrorRef = useRef<string | null>(null);
+  const setPlayerError = useCallback((msg: string | null) => {
+    latestErrorRef.current = msg;
+    setPlayerErrorState(msg);
+  }, []);
+
   const [isBuffering, setIsBuffering] = useState(false);
   const [playerEngine, setPlayerEngineState] = useState<PlayerEngine>("auto");
   const setPlayerEngine = useCallback((engine: PlayerEngine) => {
@@ -106,9 +112,63 @@ export function useVideoPlayer(
     setRetryKey(prev => prev + 1);
   }, [setRetryKey]);
 
-  const [playerStatus, setPlayerStatus] = useState<
+  const [playerStatus, setPlayerStatusState] = useState<
     "idle" | "loading" | "playing" | "error"
   >("idle");
+
+  const errorRetryCountRef = useRef(0);
+  const recoveryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const setPlayerStatus = useCallback((status: "idle" | "loading" | "playing" | "error") => {
+    setPlayerStatusState(status);
+
+    if (status === "playing") {
+      errorRetryCountRef.current = 0;
+      if (recoveryTimeoutRef.current) {
+        clearTimeout(recoveryTimeoutRef.current);
+        recoveryTimeoutRef.current = null;
+      }
+    }
+
+    if (status === "error") {
+      const err = latestErrorRef.current || "";
+      const isIOSUnsupported = err.toLowerCase().includes("not supported in ios");
+
+      if (isIOSUnsupported) {
+        console.log("[Player Error] Permanent platform error. Skipping recovery retry.");
+        return;
+      }
+
+      if (recoveryTimeoutRef.current) {
+        clearTimeout(recoveryTimeoutRef.current);
+      }
+
+      if (errorRetryCountRef.current >= 3) {
+        console.warn(`[Player Error] Max recovery attempts (3) reached. Switching channel...`);
+        errorRetryCountRef.current = 0;
+        if (recoveryTimeoutRef.current) {
+          clearTimeout(recoveryTimeoutRef.current);
+          recoveryTimeoutRef.current = null;
+        }
+        if (onChannelFailRef.current) {
+          onChannelFailRef.current();
+        }
+      } else {
+        errorRetryCountRef.current += 1;
+        console.log(`[Player Error] Attempting auto-recovery reload #${errorRetryCountRef.current} in 1.5s...`);
+        
+        recoveryTimeoutRef.current = setTimeout(() => {
+          if (loadedChannelRef.current) {
+            initializeStreamRef.current(
+              loadedChannelRef.current,
+              false,
+              loadedChannelRef.current.useProxy
+            );
+          }
+        }, 1500);
+      }
+    }
+  }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerWrapperRef = useRef<HTMLDivElement>(null);
@@ -145,6 +205,7 @@ export function useVideoPlayer(
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fallbackAttemptRef = useRef(0);
   const onChannelFailRef = useRef(onChannelFail);
+  // eslint-disable-next-line react-hooks/immutability
   useEffect(() => { onChannelFailRef.current = onChannelFail; }, [onChannelFail]);
 
   const playerStatusRef = useRef(playerStatus);
@@ -269,6 +330,9 @@ export function useVideoPlayer(
       }
       if (unmuteCleanupRef.current) {
         unmuteCleanupRef.current();
+      }
+      if (recoveryTimeoutRef.current) {
+        clearTimeout(recoveryTimeoutRef.current);
       }
     };
   }, []);
@@ -690,6 +754,15 @@ export function useVideoPlayer(
       const video = videoRef.current;
       if (!video) return;
 
+      if (recoveryTimeoutRef.current) {
+        clearTimeout(recoveryTimeoutRef.current);
+        recoveryTimeoutRef.current = null;
+      }
+
+      if (isUserClick || (loadedChannelRef.current && loadedChannelRef.current.id !== initialChan.id)) {
+        errorRetryCountRef.current = 0;
+      }
+
       setPlayerStatus("loading");
       setPlayerError(null);
       setIsBuffering(false);
@@ -699,6 +772,7 @@ export function useVideoPlayer(
       setActiveAutoQualityId(null);
       setDetectedResolution(null);
       loadedUrlRef.current = initialChan.url;
+      // eslint-disable-next-line react-hooks/immutability
       loadedChannelRef.current = initialChan;
 
       if (hlsRef.current) {
@@ -1685,7 +1759,7 @@ export function useVideoPlayer(
         })();
       }, 50);
     },
-    [setupUnmuteOnInteraction, playerEngine]
+    [setupUnmuteOnInteraction, playerEngine, setPlayerError, setPlayerStatus]
   );
 
   // Auto-play / load stream when selectedChannel or retryKey changes
