@@ -1,7 +1,7 @@
 # Stage 1: Dependencies
 FROM node:22-alpine AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
@@ -10,13 +10,11 @@ RUN npm ci
 
 # Stage 2: Builder
 FROM node:22-alpine AS builder
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma Client for Alpine
-RUN npx prisma generate
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
@@ -27,7 +25,7 @@ RUN npm run build
 
 # Stage 3: Runner
 FROM node:22-alpine AS runner
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 ENV NODE_ENV=production
