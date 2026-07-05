@@ -699,18 +699,18 @@ export function useVideoPlayer(
         player.configure({
           abr: { enabled: true },
           streaming: {
-            rebufferingGoal: isMaxQ ? 8 : 4,
-            bufferingGoal: isMaxQ ? 60 : 30,
-            bufferBehind: isMaxQ ? 30 : 20,
+            rebufferingGoal: isMaxQ ? 15 : 8,
+            bufferingGoal: isMaxQ ? 120 : 60,
+            bufferBehind: isMaxQ ? 60 : 30,
           },
         });
       } else {
         player.configure({
           abr: { enabled: false },
           streaming: {
-            rebufferingGoal: isMaxQ ? 10 : 5,
-            bufferingGoal: isMaxQ ? 90 : 45,
-            bufferBehind: isMaxQ ? 40 : 25,
+            rebufferingGoal: isMaxQ ? 15 : 8,
+            bufferingGoal: isMaxQ ? 120 : 60,
+            bufferBehind: isMaxQ ? 60 : 30,
           },
         });
         const tracks = player.getVariantTracks();
@@ -725,15 +725,15 @@ export function useVideoPlayer(
       if (qualityId === "auto") {
         hls.currentLevel = -1;
         if (isMaxQ) {
-          hls.config.maxBufferLength = 60;
-          hls.config.maxMaxBufferLength = 120;
+          hls.config.maxBufferLength = 120;
+          hls.config.maxMaxBufferLength = 240;
         }
       } else {
         hls.currentLevel = qualityId as number;
         hls.nextLevel = qualityId as number;
         if (isMaxQ) {
-          hls.config.maxBufferLength = 90;
-          hls.config.maxMaxBufferLength = 180;
+          hls.config.maxBufferLength = 120;
+          hls.config.maxMaxBufferLength = 240;
         }
       }
     }
@@ -748,7 +748,7 @@ export function useVideoPlayer(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const initializeStreamRef = useRef<any>(null);
   const initializeStream = useCallback(
-    (initialChan: Channel, isUserClick: boolean, overrideProxyMode?: boolean) => {
+    (initialChan: Channel, isUserClick: boolean, overrideProxyMode?: boolean, overrideEngine?: PlayerEngine) => {
       // eslint-disable-next-line react-hooks/immutability
       initializeStreamRef.current = initializeStream;
       const video = videoRef.current;
@@ -956,7 +956,7 @@ export function useVideoPlayer(
           const isHls = chan.type === "hls" || cleanChanUrlStr.endsWith(".m3u8") || cleanChanUrlStr.endsWith(".m3u");
           const isTs = !isDash && !isHls && (cleanChanUrlStr.endsWith(".ts") || chan.type === "ts");
 
-          const forceEngine = playerEngine;
+          const forceEngine = overrideEngine || playerEngine;
           const useShaka = forceEngine === "shaka" || (forceEngine === "auto" && isDash);
           const useVideoJs = forceEngine === "video.js";
           const useTs = forceEngine === "auto" && isTs;
@@ -1118,9 +1118,9 @@ export function useVideoPlayer(
                     streaming: {
                       lowLatencyMode: false,
                       inaccurateManifestTolerance: 3,
-                      rebufferingGoal: isMaxQuality ? 12 : 6, // Safe minimum buffer before resuming standard playback
-                      bufferingGoal: isMaxQuality ? 60 : 30, // Larger prebuffer for stability
-                      bufferBehind: isMaxQuality ? 30 : 20,
+                      rebufferingGoal: isMaxQuality ? 15 : 8, // Safe minimum buffer before resuming standard playback
+                      bufferingGoal: isMaxQuality ? 120 : 60, // Larger prebuffer for stability
+                      bufferBehind: isMaxQuality ? 60 : 30,
                       gapDetectionThreshold: 0.4,
                       stallEnabled: true,
                       stallThreshold: 1.2,
@@ -1158,6 +1158,12 @@ export function useVideoPlayer(
 
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   player.addEventListener("error", (event: any) => {
+                    if (overrideEngine === "shaka") {
+                      console.warn("Shaka fallback failed, attempting fallback to video.js...");
+                      player.destroy().catch(() => {});
+                      initializeStreamRef.current(initialChan, false, chan.useProxy, "video.js");
+                      return;
+                    }
                     const detail = event?.detail;
                     console.error("[SHAKA] DASH error detail:", JSON.stringify(detail));
                     const code = detail?.code ?? "";
@@ -1315,6 +1321,15 @@ export function useVideoPlayer(
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 player.on(mpegts.Events.ERROR, (errorType: string, errorDetail: string, errorInfo: any) => {
                   console.error("[MPEGTS] Error:", errorType, errorDetail, errorInfo);
+                  if (!overrideEngine) {
+                    console.log("MPEGTS failed, attempting fallback to hls.js...");
+                    if (mpegtsRef.current) {
+                      mpegtsRef.current.destroy();
+                      mpegtsRef.current = null;
+                    }
+                    initializeStreamRef.current(initialChan, false, chan.useProxy, "hls.js");
+                    return;
+                  }
                   setPlayerError(`TS stream error: ${errorDetail}`);
                   setPlayerStatus("error");
                 });
@@ -1350,9 +1365,9 @@ export function useVideoPlayer(
                       lowLatencyMode: !isMaxQuality,
                       startLevel: -1,
                       // Buffer Optimization — pre-buffering
-                      maxBufferLength: isMaxQuality ? 60 : 30,
-                      maxMaxBufferLength: isMaxQuality ? 120 : 60,
-                      maxBufferSize: isMaxQuality ? 120 * 1000 * 1000 : 40 * 1000 * 1000,
+                      maxBufferLength: isMaxQuality ? 120 : 60,
+                      maxMaxBufferLength: isMaxQuality ? 240 : 120,
+                      maxBufferSize: isMaxQuality ? 180 * 1000 * 1000 : 80 * 1000 * 1000,
                       maxBufferHole: 0.5,
                       backBufferLength: isMaxQuality ? 30 : 0,
                       // Live Stream Latency — play behind live edge to prevent buffering
@@ -1419,6 +1434,12 @@ export function useVideoPlayer(
 
                     hls.on(Hls.Events.ERROR, (_event: string, data: { fatal: boolean; type: string }) => {
                       if (data.fatal) {
+                        if (overrideEngine === "hls.js") {
+                          console.warn("HLS.js fallback failed, attempting fallback to shaka...");
+                          hls.destroy();
+                          initializeStreamRef.current(initialChan, false, chan.useProxy, "shaka");
+                          return;
+                        }
                         switch (data.type) {
                           case Hls.ErrorTypes.NETWORK_ERROR:
                             if (fallbackAttemptRef.current === 0) {
@@ -1511,9 +1532,9 @@ export function useVideoPlayer(
                     lowLatencyMode: !isMaxQuality,
                     startLevel: isMaxQuality ? -1 : 0, // Start at lowest quality (0) for instant playback
                     // Buffer Optimization — pre-buffering
-                    maxBufferLength: isMaxQuality ? 60 : 30,
-                    maxMaxBufferLength: isMaxQuality ? 120 : 60,
-                    maxBufferSize: isMaxQuality ? 120 * 1000 * 1000 : 40 * 1000 * 1000,
+                    maxBufferLength: isMaxQuality ? 120 : 60,
+                    maxMaxBufferLength: isMaxQuality ? 240 : 120,
+                    maxBufferSize: isMaxQuality ? 180 * 1000 * 1000 : 80 * 1000 * 1000,
                     maxBufferHole: 0.5,
                     backBufferLength: isMaxQuality ? 30 : 0,
                     // Live Stream Latency — play behind live edge to prevent buffering
@@ -1585,6 +1606,12 @@ export function useVideoPlayer(
 
                   hls.on(Hls.Events.ERROR, (_event: string, data: { fatal: boolean; type: string }) => {
                     if (data.fatal) {
+                      if (overrideEngine === "hls.js") {
+                        console.warn("HLS.js fallback failed, attempting fallback to shaka...");
+                        hls.destroy();
+                        initializeStreamRef.current(initialChan, false, chan.useProxy, "shaka");
+                        return;
+                      }
                       switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
                           console.warn("Fatal HLS network error, attempting to recover...");
