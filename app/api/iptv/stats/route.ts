@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/app/lib/prisma";
-import { getCurrentUser } from "@/app/lib/auth";
 import { parseM3U, parseJSON, Channel } from "@/app/lib/playlistParser";
 
+/**
+ * Represents an active viewer session tracking current channel and imported playlists.
+ */
 interface ViewerSession {
   lastHeartbeat: number;
   channelName?: string;
   playlistUrls?: string[];
 }
 
+/**
+ * Structured information representing an IPTV channel extracted from playlists.
+ */
 interface ChannelInfo {
   name: string;
   logo: string;
@@ -16,19 +20,24 @@ interface ChannelInfo {
   group: string;
 }
 
+/**
+ * Cache entry for remote playlist requests to avoid slamming client streaming sources.
+ */
 interface PlaylistCacheEntry {
   channels: ChannelInfo[];
   lastFetched: number;
 }
 
-// In-memory sessions map
+// Global in-memory maps for real-time tracking (bypasses persistent database database storage)
 const activeSessions = new Map<string, ViewerSession>();
-const HEARTBEAT_TIMEOUT = 45 * 1000; // 45 seconds
+const HEARTBEAT_TIMEOUT = 45 * 1000; // Session timeout limit (45 seconds)
 
-// Playlist cache mapping: URL -> cache entry
 const playlistCache = new Map<string, PlaylistCacheEntry>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000; // Playlist content cache TTL (5 minutes)
 
+/**
+ * Cleans up and deletes expired viewer sessions that missed heartbeats.
+ */
 function cleanExpiredSessions() {
   const now = Date.now();
   for (const [sessionId, session] of activeSessions.entries()) {
@@ -38,6 +47,13 @@ function cleanExpiredSessions() {
   }
 }
 
+/**
+ * Resolves channel list for a playlist URL.
+ * Leverages in-memory cache to optimize performance and prevent network floods.
+ *
+ * @param {string} url - Remote playlist URL
+ * @returns {Promise<ChannelInfo[]>} Extracted channels list
+ */
 async function fetchPlaylistChannels(url: string): Promise<ChannelInfo[]> {
   const now = Date.now();
   const cached = playlistCache.get(url);
@@ -91,7 +107,13 @@ async function fetchPlaylistChannels(url: string): Promise<ChannelInfo[]> {
   return channels;
 }
 
-async function getStatsData(userId?: string) {
+/**
+ * Combines in-memory stats across active viewer sessions to calculate active viewer counts 
+ * and return top channels currently being streamed.
+ *
+ * @returns {Promise<{ count: number; topChannels: any[] }>} Combined sessions metadata
+ */
+async function getStatsData() {
   // If no active session is watching a channel, return early with count to avoid unnecessary playlist fetches
   const hasActiveViewers = Array.from(activeSessions.values()).some((s) => !!s.channelName);
   if (!hasActiveViewers) {
@@ -101,29 +123,9 @@ async function getStatsData(userId?: string) {
     };
   }
 
-  const domain = process.env.PLAYLIST_DOMAIN || "iamshajon.com";
   const urlsToFetch: string[] = [];
 
-  // 1. If logged in, fetch saved playlists of this specific user from the database
-  if (userId) {
-    try {
-      const dbPlaylists = await prisma.savedPlaylist.findMany({
-        where: { userId },
-        select: { url: true },
-      });
-      dbPlaylists.forEach((p) => {
-        const u = p.url.trim();
-        try {
-          const parsed = new URL(u);
-          if (parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)) {
-            urlsToFetch.push(u);
-          }
-        } catch {}
-      });
-    } catch (e) {
-      console.error("DB query failed in stats API:", e);
-    }
-  }
+  // 1. Database playlist lookup is bypassed since database storage is removed.
 
   // 2. Add client-sent playlist URLs from active sessions
   for (const session of activeSessions.values()) {
@@ -136,9 +138,7 @@ async function getStatsData(userId?: string) {
     }
   }
 
-
-
-  // 4. Fetch and combine channels from all active playlists
+  // 3. Fetch and combine channels from all active playlists
   const channelsMap = new Map<string, ChannelInfo>();
   for (const url of urlsToFetch) {
     const playlistChannels = await fetchPlaylistChannels(url);
@@ -150,7 +150,7 @@ async function getStatsData(userId?: string) {
     }
   }
 
-  // 5. Count active viewers per channel
+  // 4. Count active viewers per channel
   const channelCounts = new Map<string, number>();
   for (const session of activeSessions.values()) {
     if (session.channelName) {
@@ -183,16 +183,15 @@ async function getStatsData(userId?: string) {
   };
 }
 
+/**
+ * GET handler to retrieve current streaming statistics (online count and top active channels).
+ *
+ * @returns {Promise<NextResponse>} JSON response containing analytics data
+ */
 export async function GET() {
   cleanExpiredSessions();
   
-  let userId: string | undefined;
-  try {
-    const user = await getCurrentUser();
-    userId = user?.id;
-  } catch {}
-
-  const data = await getStatsData(userId);
+  const data = await getStatsData();
 
   return NextResponse.json(
     data,
@@ -205,6 +204,13 @@ export async function GET() {
   );
 }
 
+/**
+ * POST handler to receive heartbeats from viewing clients.
+ * Registers active streaming state and returns updated analytics/trending channels.
+ *
+ * @param {Request} request - The incoming Next.js API Request object
+ * @returns {Promise<NextResponse>} JSON response containing status and stats
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -237,13 +243,7 @@ export async function POST(request: Request) {
 
     cleanExpiredSessions();
 
-    let userId: string | undefined;
-    try {
-      const user = await getCurrentUser();
-      userId = user?.id;
-    } catch {}
-
-    const data = await getStatsData(userId);
+    const data = await getStatsData();
 
     return NextResponse.json(
       { success: true, ...data },
@@ -261,6 +261,11 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * OPTIONS preflight handler to allow CORS access for cross-origin analytics logging.
+ *
+ * @returns {Response} HTTP response with appropriate CORS headers
+ */
 export async function OPTIONS() {
   return new Response(null, {
     status: 204,
