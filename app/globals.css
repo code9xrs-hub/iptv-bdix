@@ -13,6 +13,11 @@
   html, body {
     background-color: #070414;
     @apply text-white antialiased selection:bg-primary/30;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  html::-webkit-scrollbar, body::-webkit-scrollbar {
+    display: none;
   }
   body {
     font-family: 'Inter', 'Poppins', system-ui, -apple-system, sans-serif;

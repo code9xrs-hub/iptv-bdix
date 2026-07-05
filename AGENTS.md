@@ -3,7 +3,7 @@
 Welcome to the **IPTV** project. This document provides essential context, architectural guidelines, and coding standards for AI agents (like GitHub Copilot, Cursor, Windsurf, or Gemini) operating within this repository.
 
 ## 📌 Project Overview
-This project is a modern, responsive, and high-performance IPTV web player built with Next.js. It supports **HLS (.m3u8)**, **DASH (.mpd)**, and legacy **MPEG-TS (.ts)** live streams. It parses custom `.m3u` and `.json` playlists, supports Cloud Playlist Sync using Google OAuth & PostgreSQL, and features a sleek, premium, glassmorphism-inspired UI with YouTube-like video controls and quality selection.
+This project is a modern, responsive, and high-performance IPTV web player built with Next.js. It supports **HLS (.m3u8)**, **DASH (.mpd)**, and legacy **MPEG-TS (.ts)** live streams. It parses custom `.m3u` and `.json` playlists locally, and features a sleek, premium, glassmorphism-inspired UI with YouTube-like video controls and quality selection.
 
 ## 🛠️ Technology Stack
 - **Framework:** Next.js 16.x (App Router)
@@ -14,23 +14,20 @@ This project is a modern, responsive, and high-performance IPTV web player built
   - `hls.js` (for HTTP Live Streaming)
   - `shaka-player` (for DASH and DRM-encrypted streams)
   - `mpegts.js` (for legacy MPEG-TS streams)
-- **Database ORM:** Prisma (PostgreSQL)
-- **Authentication:** Google Auth Library
 - **HTTP Client:** Undici (for secure proxy streaming)
 - **Animations:** `motion` (Framer Motion)
 - **Icons:** `lucide-react`, `react-icons`
 
 ## 📂 Project Structure
 - `app/` - Next.js App Router root.
-  - `api/` - Backend API routes (e.g., proxying requests, viewers tracking, auth).
+  - `api/` - Backend API routes (e.g., proxying requests, viewers tracking, setting custom configuration).
   - `components/` - Reusable UI components.
     - `player/` - Video player sub-components (`VideoPlayerView`, `ChannelListView`, etc.).
-  - `hooks/` - Custom React hooks (`useVideoPlayer`, `useIPTVPlaylists`, `useAuth`).
+  - `hooks/` - Custom React hooks (`useVideoPlayer`, `useIPTVPlaylists`).
   - `data/` - Static JSON files (e.g., `fifa.json`).
 - `electron/` - Electron desktop app wrappers.
   - `main.js` - Main process launcher (manages Next.js server process and windows).
   - `preload.js` - Context bridge preload script.
-- `prisma/` - Prisma database schema.
 - `public/` - Static assets.
 - `scripts/` - Custom build scripts (e.g., `copy-next-assets.js` for copying Next.js static files).
 
@@ -61,12 +58,12 @@ This project is a modern, responsive, and high-performance IPTV web player built
 ### 5. Backend, Next.js APIs, & Security
 - Use Next.js Route Handlers (`app/api/route.ts`).
 - When dealing with CORS issues on live streams, route the streams through the built-in proxy (`/api/iptv/proxy`).
+- **Dynamic Default Playlists & Hashing**: The playlist cards and channels lists are dynamic. The server retrieves playlist indexes from `PLAYLIST_DOMAIN` (from environment variables) at `/api/iptv/channels` and `/api/iptv/channels/hash`. The server checks, computes SHA-256 hashes of channel JSONs, and caches them in memory.
+- **Client-Side Hashing & Caching**: The client uses IndexedDB cache (`iptv-cache` database) to load playlist structures and channels instantly. It checks server hashes (`/api/iptv/channels/hash`) in the background on mount and periodically (every 15 minutes), only updating cache and state if a change is detected.
 - Ensure proxy routes (`Undici`) maintain anti-SSRF protections and handle URL/query parameter propagation correctly.
-- Be aware of the Turnstile and Auth implementations when modifying API routes that require protection or user context.
 ### 6. Electron & Desktop Application Context
 - **Standalone server**: In production, Electron spawns the built Next.js server locally (`.next/standalone/server.js`) on a dynamic free port.
-- **Prisma & ASAR**: Because Prisma query engines are binary files, they must run unpacked from disk. They are excluded from the ASAR archive in `package.json` under `"asarUnpack"`.
-- **Environment variables**: Config settings (like `DATABASE_URL` and `NEXTAUTH_SECRET`) are read from a `.env` file located in the user's AppData directory or next to the executable.
+- **Environment variables**: Config settings are read from a `.env` file located in the user's AppData directory or next to the executable.
 
 ## 🤝 AI Agent Workflow
 When asked to implement a feature or fix a bug:

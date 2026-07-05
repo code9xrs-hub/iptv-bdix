@@ -5,6 +5,10 @@ const customOrigins = process.env.ALLOWED_DEV_ORIGINS
   : [];
 
 const nextConfig: NextConfig = {
+  env: {
+    PLAYLIST_DOMAIN: process.env.PLAYLIST_DOMAIN || "",
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || "",
+  },
   output: "standalone",
   allowedDevOrigins: customOrigins,
   images: {

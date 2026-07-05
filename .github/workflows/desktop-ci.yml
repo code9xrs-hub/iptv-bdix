@@ -21,9 +21,9 @@ jobs:
             os: "ubuntu-22.04"
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
@@ -41,16 +41,13 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
-          NEXT_PUBLIC_DISABLE_TURNSTILE: ${{ secrets.NEXT_PUBLIC_DISABLE_TURNSTILE }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          ALLOWED_DEV_ORIGINS: "live.shajon.dev,192.168.0.57,192.168.0.179,127.0.0.1"
+          NEXT_PUBLIC_SITE_URL: "https://tv.shajon.dev"
+          PLAYLIST_DOMAIN: "iamshajon.com"
 
       - name: Upload Windows Artifacts
         if: matrix.platform == 'windows'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: IPTV-Player-windows
           path: |
@@ -60,7 +57,7 @@ jobs:
 
       - name: Upload Linux Artifacts
         if: matrix.platform == 'linux'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: IPTV-Player-linux
           path: |
@@ -79,13 +76,19 @@ jobs:
       contents: write
     steps:
       - name: Get all distributables
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v4
 
       - name: Publish to GitHub Releases
-        uses: svenstaro/upload-release-action@v2
+        uses: softprops/action-gh-release@v2
         with:
-          tag: ${{ github.ref }}
-          prerelease: true
-          file: ./**/*
-          file_glob: true
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref_name }}
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            **/*.exe
+            **/*.zip
+            **/*.AppImage
+            **/*.deb
+            **/*.rpm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -20,9 +20,9 @@ A modern, high-performance, and premium web-based IPTV player built with **Next.
 
 - 🎬 **Advanced Video Engine**: Seamless playback for HLS, DASH (with ClearKey DRM), and MPEG-TS streams using native and custom engines (`hls.js`, `shaka-player`, `mpegts.js`).
 - 🎛️ **Cinematic Player Experience**: Custom video quality selection with precise Mbps analytics, Picture-in-Picture (PiP), and double-tap seek.
-- 🛡️ **Security & Proxy Routing**: Built-in secure proxy to bypass CORS and Geo-blocking with custom headers, protected by Anti-SSRF DNS validation and Cloudflare Turnstile Server Actions.
+- 🛡️ **Security & Proxy Routing**: Built-in secure proxy to bypass CORS and Geo-blocking with custom headers, protected by Anti-SSRF DNS validation.
 - ⚡ **High-Performance Architecture**: Smart proxy bypass for direct streams.
-- ☁️ **Cloud Playlist Sync**: Built-in Google OAuth authentication with a PostgreSQL database to securely save and sync custom M3U/JSON playlists across all your devices.
+- 💾 **Local Playlist Caching**: Auto-caches default and custom playlists (IndexedDB) for instant load speeds and offline channel accessibility.
 - ✨ **Premium Glassmorphic UI**: Responsive interactive channel grid, seamless skeleton loaders, sticky headers, knockout bracket cards, and a GPU-optimized 3D CSS cyber background.
 
 ---
@@ -33,8 +33,6 @@ A modern, high-performance, and premium web-based IPTV player built with **Next.
 - **Library**: [React 19](https://react.dev/)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
 - **Animations**: [Motion](https://motion.dev/)
-- **Authentication**: Custom implementation using [Google Auth Library](https://github.com/googleapis/google-auth-library-nodejs)
-- **Database ORM**: [Prisma](https://www.prisma.io/) (PostgreSQL)
 - **Stream Engines**: [HLS.js](https://github.com/video-dev/hls.js/), [Shaka Player](https://github.com/shaka-project/shaka-player) (for DASH & ClearKey DRM), & [mpegts.js](https://github.com/xqq/mpegts.js) (for legacy MPEG-TS)
 - **HTTP Client**: [Undici](https://github.com/nodejs/undici) (for secure proxy streaming)
 
@@ -65,26 +63,16 @@ Ensure you have **Node.js** (**v22.19.0** or newer) installed.
    # Popup Configuration
    SHOW_POPUP=True
 
-   # Cloudflare Turnstile Verification Configuration
-   NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-site-key
-   TURNSTILE_SECRET_KEY=your-secret-key
-   NEXT_PUBLIC_DISABLE_TURNSTILE=False
-
    # Developer/Local Subnet Origins (CORS validation bypass)
    ALLOWED_DEV_ORIGINS=live.shajon.dev,192.168.0.57
 
-   # Database & Authentication (For Cloud Sync)
-   DATABASE_URL="postgresql://user:password@host:port/dbname?schema=public"
-   ROOT_DOMAIN=localhost
-   GOOGLE_CLIENT_ID=your-google-client-id
-   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   # Default Playlists Domain (Dynamic available_playlist.json domain)
+   PLAYLIST_DOMAIN=iamshajon.com
    ```
 
-3. Setup the database and install dependencies:
+3. Install dependencies:
    ```bash
    npm install
-   npx prisma db push
-   npx prisma generate
    ```
 
 4. Run the development server:
@@ -132,9 +120,8 @@ The desktop application runs the Next.js production server locally in a backgrou
    npm run electron:dist-linux
    ```
 
-#### Configuration & Database Setup
+#### Configuration Setup
 When launched, the desktop app searches for a configuration `.env` file in the user's home folder config path (`%APPDATA%/iptv` on Windows or `~/.config/iptv` on Linux). If it doesn't exist, a default template is generated.
-Ensure you update this `.env` with your **DATABASE_URL** (PostgreSQL instance connection string) before launching the compiled app.
 
 
 ### Docker Deployment

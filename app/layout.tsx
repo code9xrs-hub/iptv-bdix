@@ -1,13 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import ClientPopupWrapper from "./components/ClientPopupWrapper";
-import { AuthProvider } from "./hooks/useAuth";
 import Script from "next/script";
 import MobileNavBar from "./components/MobileNavBar";
-import TurnstileGuard from "./components/TurnstileGuard";
 import ViewerTracker from "./components/ViewerTracker";
-import MaintenanceView from "./components/MaintenanceView";
 import Footer from "./components/Footer";
 
 const inter = Inter({
@@ -66,7 +62,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: siteUrl,
     siteName: "IPTV Player",
-    title: "IPTV Player — Watch 6500+ Live TV Channels Free",
+    title: "IPTV Player — By S. SHAJON",
     description:
       "Stream 6500+ live TV channels from Bangladesh, India, and worldwide. Premium IPTV web player with HLS streaming, custom playlist support, and a modern UI.",
     images: [
@@ -92,27 +88,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const showPopup = process.env.SHOW_POPUP?.toLowerCase() === "true";
-  const isMaintenance = process.env.MAINTANANCE?.toLowerCase() === "true";
-
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col pb-24 md:pb-0 bg-[#070414]">
-        {isMaintenance ? (
-          <MaintenanceView />
-        ) : (
-          <TurnstileGuard>
-            <AuthProvider>
-              <ViewerTracker />
-              <div className="flex-1 flex flex-col">
-                {children}
-              </div>
-              <Footer />
-              <MobileNavBar />
-              <ClientPopupWrapper showPopup={showPopup} />
-            </AuthProvider>
-          </TurnstileGuard>
-        )}
+        <ViewerTracker />
+        <div className="flex-1 flex flex-col">
+          {children}
+        </div>
+        <Footer />
+        <MobileNavBar />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-N36GM5VYZ7"
           strategy="afterInteractive"

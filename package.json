@@ -1,8 +1,9 @@
 {
   "name": "iptv",
+  "desktopName": "iptv.desktop",
   "version": "3.0.0",
   "description": "A modern, high-performance, and premium web-based IPTV player built with Next.js 16, React 19, and Tailwind CSS v4.",
-  "author": "S. SHAJON",
+  "author": "S. SHAJON <shahmakhdumshajon@gmail.com>",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
@@ -10,7 +11,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "electron:dev": "electron .",
+    "electron:dev": "electron . --no-sandbox",
     "electron:build-next": "next build --webpack && node scripts/copy-next-assets.js",
     "electron:pack": "npm run electron:build-next && electron-builder --dir",
     "electron:dist": "npm run electron:build-next && electron-builder",
@@ -18,9 +19,7 @@
     "electron:dist-linux": "npm run electron:build-next && electron-builder --linux"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
     "@types/video.js": "^7.3.58",
-    "google-auth-library": "^10.7.0",
     "hls.js": "^1.6.16",
     "lucide-react": "^1.17.0",
     "motion": "^12.40.0",
@@ -47,7 +46,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "postcss-preset-env": "^11.3.0",
-    "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
@@ -75,16 +73,6 @@
       "electron/**/*",
       ".next/standalone/**/*"
     ],
-    "extraResources": [
-      {
-        "from": "node_modules/.prisma",
-        "to": "node_modules/.prisma"
-      },
-      {
-        "from": "node_modules/@prisma/client",
-        "to": "node_modules/@prisma/client"
-      }
-    ],
     "asar": true,
     "asarUnpack": [
       ".next/standalone/**"
@@ -92,6 +80,7 @@
     "win": {
       "target": [
         "nsis",
+        "portable",
         "zip"
       ],
       "icon": "public/logo.png"
@@ -104,6 +93,7 @@
       "shortcutName": "IPTV Player"
     },
     "linux": {
+      "syncDesktopName": true,
       "target": [
         "AppImage",
         "deb",
